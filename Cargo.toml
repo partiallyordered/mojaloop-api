@@ -7,3 +7,4 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "eb06f4df26be6e5be4f27076d0817f30a42b1510" }
