@@ -1,6 +1,10 @@
+use serde::{Serialize, Deserialize};
 use fspiox_api::common::{Currency,FspId};
-use crate::common::{CentralLedgerRequest,Method};
+use crate::common::Method;
+pub use crate::common::CentralLedgerRequest;
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
 pub struct NewParticipant {
     pub name: FspId,
     pub currency: Currency,
