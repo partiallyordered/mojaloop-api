@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use fspiox_api::common::{Currency,FspId,CorrelationId,Money};
+use fspiox_api::common::{Currency,FspId,CorrelationId,Money,DateTime,Amount};
 use crate::common::Method;
 use derive_more::Display;
 pub use crate::common::CentralLedgerRequest;
@@ -21,7 +21,7 @@ pub use crate::common::CentralLedgerRequest;
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountId(u64);
-#[derive(Serialize, Deserialize, Debug, Display)]
+#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementAccountId(u64);
 
@@ -30,6 +30,13 @@ pub struct SettlementAccountId(u64);
 pub enum AccountType {
     HubMultilateralSettlement,
     HubReconciliation,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum LedgerAccountType {
+    Position,
+    Settlement,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -67,7 +74,8 @@ pub struct Limit {
 pub struct InitialPositionAndLimits {
     pub currency: Currency,
     pub limit: Limit,
-    pub initial_position: Money,
+    // TODO: should this be Amount? Check the spec.
+    pub initial_position: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -94,20 +102,40 @@ pub enum PartyIdType {
     MSISDN,
 }
 
+#[derive(Debug)]
 pub struct PostHubAccount {
     pub account: HubAccount,
     pub name: FspId, // typically Hub or hub. TODO: a bit of documentation about where this is configured, and how a user can find it.
 }
 
+#[derive(Debug)]
 pub struct PostParticipant {
     pub participant: NewParticipant,
 }
 
+#[derive(Debug)]
 pub struct PostInitialPositionAndLimits {
     pub initial_position_and_limits: InitialPositionAndLimits,
     pub name: FspId,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
+pub struct DfspAccount {
+    pub id: SettlementAccountId,
+    pub ledger_account_type: LedgerAccountType,
+    pub currency: Currency,
+    // TODO: this is an enum with value 0 or 1
+    pub is_active: u8,
+    pub value: Amount,
+    pub reserved_value: Amount,
+    pub changed_date: DateTime,
+}
+
+pub type DfspAccounts = Vec<DfspAccount>;
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct GetDfspAccounts {
     pub name: FspId,
 }
@@ -121,33 +149,34 @@ pub struct PostParticipantSettlementFunds {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FspiopCallbackType {
-    ParticipantBatchPut,
-    ParticipantBatchPutError,
-    ParticipantPut,
-    ParticipantPutError,
-    PartiesGet,
-    PartiesPut,
-    PartiesPutError,
-    Quotes,
-    TransferError,
-    TransferPost,
-    TransferPut,
+    // The prefixes on these enums is fairly redundant, but mirrors the enums used in the API
+    FspiopCallbackUrlParticipantBatchPut,
+    FspiopCallbackUrlParticipantBatchPutError,
+    FspiopCallbackUrlParticipantPut,
+    FspiopCallbackUrlParticipantPutError,
+    FspiopCallbackUrlPartiesGet,
+    FspiopCallbackUrlPartiesPut,
+    FspiopCallbackUrlPartiesPutError,
+    FspiopCallbackUrlQuotes,
+    FspiopCallbackUrlTransferError,
+    FspiopCallbackUrlTransferPost,
+    FspiopCallbackUrlTransferPut,
 }
 
 const fn get_callback_path(callback_type: FspiopCallbackType) -> &'static str {
     use FspiopCallbackType::*;
     match callback_type {
-        ParticipantBatchPut      => "/participants/{{requestId}}",
-        ParticipantBatchPutError => "/participants/{{requestId}}/error",
-        ParticipantPut           => "/participants/{{partyIdType}}/{{partyIdentifier}}",
-        ParticipantPutError      => "/participants/{{partyIdType}}/{{partyIdentifier}}/error",
-        PartiesGet               => "/parties/{{partyIdType}}/{{partyIdentifier}}",
-        PartiesPut               => "/parties/{{partyIdType}}/{{partyIdentifier}}",
-        PartiesPutError          => "/parties/{{partyIdType}}/{{partyIdentifier}}/error",
-        Quotes                   => "", // TODO: is this correct?
-        TransferError            => "/transfers/{{transferId}}/error",
-        TransferPost             => "/transfers",
-        TransferPut              => "/transfers/{{transferId}}",
+        FspiopCallbackUrlParticipantBatchPut      => "/participants/{{requestId}}",
+        FspiopCallbackUrlParticipantBatchPutError => "/participants/{{requestId}}/error",
+        FspiopCallbackUrlParticipantPut           => "/participants/{{partyIdType}}/{{partyIdentifier}}",
+        FspiopCallbackUrlParticipantPutError      => "/participants/{{partyIdType}}/{{partyIdentifier}}/error",
+        FspiopCallbackUrlPartiesGet               => "/parties/{{partyIdType}}/{{partyIdentifier}}",
+        FspiopCallbackUrlPartiesPut               => "/parties/{{partyIdType}}/{{partyIdentifier}}",
+        FspiopCallbackUrlPartiesPutError          => "/parties/{{partyIdType}}/{{partyIdentifier}}/error",
+        FspiopCallbackUrlQuotes                   => "", // TODO: is this correct?
+        FspiopCallbackUrlTransferError            => "/transfers/{{transferId}}/error",
+        FspiopCallbackUrlTransferPost             => "/transfers",
+        FspiopCallbackUrlTransferPut              => "/transfers/{{transferId}}",
     }
 }
 
@@ -163,7 +192,7 @@ pub struct PostCallbackUrl {
     pub hostname: String,
 }
 
-impl CentralLedgerRequest<HubAccount> for PostHubAccount {
+impl CentralLedgerRequest<HubAccount, ()> for PostHubAccount {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String {
         format!("/participants/{}/accounts", self.name)
@@ -171,7 +200,7 @@ impl CentralLedgerRequest<HubAccount> for PostHubAccount {
     fn body(&self) -> HubAccount { self.account.clone() }
 }
 
-impl CentralLedgerRequest<CallbackUrl> for PostCallbackUrl {
+impl CentralLedgerRequest<CallbackUrl, ()> for PostCallbackUrl {
     // Wondering if this should be a PUT? Yes. Yes it should. From the spec:
     // > Add/Update participant endpoints
     // https://github.com/mojaloop/central-ledger/blob/52b7494c9ec1160d9ab4427b05e6a12283a848f7/src/api/interface/swagger.json#L399
@@ -187,7 +216,7 @@ impl CentralLedgerRequest<CallbackUrl> for PostCallbackUrl {
     }
 }
 
-impl CentralLedgerRequest<FundsInOut> for PostParticipantSettlementFunds {
+impl CentralLedgerRequest<FundsInOut, ()> for PostParticipantSettlementFunds {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String {
         format!("/participants/{}/accounts/{}", self.name, self.account_id)
@@ -195,15 +224,15 @@ impl CentralLedgerRequest<FundsInOut> for PostParticipantSettlementFunds {
     fn body(&self) -> FundsInOut { self.funds.clone() }
 }
 
-impl CentralLedgerRequest<Option<String>> for GetDfspAccounts {
+impl CentralLedgerRequest<Option<String>, DfspAccounts> for GetDfspAccounts {
     const METHOD: Method = Method::GET;
     fn path(&self) -> String {
-        format!("/participants/{:?}/accounts", self.name)
+        format!("/participants/{}/accounts", self.name)
     }
     fn body(&self) -> Option<String> { None }
 }
 
-impl CentralLedgerRequest<InitialPositionAndLimits> for PostInitialPositionAndLimits {
+impl CentralLedgerRequest<InitialPositionAndLimits, ()> for PostInitialPositionAndLimits {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String {
         format!("/participants/{}/initialPositionAndLimits", self.name)
@@ -211,7 +240,7 @@ impl CentralLedgerRequest<InitialPositionAndLimits> for PostInitialPositionAndLi
     fn body(&self) -> InitialPositionAndLimits { self.initial_position_and_limits }
 }
 
-impl CentralLedgerRequest<NewParticipant> for PostParticipant {
+impl CentralLedgerRequest<NewParticipant, ()> for PostParticipant {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String {
         "/participants".to_string()

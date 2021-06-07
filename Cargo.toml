@@ -12,3 +12,9 @@ fspiox-api = { path = "/home/msk/projects/github.com/msk-/fspiox-api/" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 derive_more = "0.99"
+
+# Optional
+reqwest = { version = "0.11", optional = true, default-features = false, features = ["json"] }
+
+[features]
+default = []
