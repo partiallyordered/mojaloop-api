@@ -18,7 +18,7 @@ pub use crate::common::CentralLedgerRequest;
 //     actual values (i.e. /participants/some_fsp/accounts, rather than
 //     /participants/{name}/accounts), or something..?)
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountId(u64);
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
@@ -71,27 +71,36 @@ pub struct Limit {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
-pub struct InitialPositionAndLimits {
-    pub currency: Currency,
-    pub limit: Limit,
-    // TODO: should this be Amount? Check the spec.
-    pub initial_position: i32,
+pub struct ParticipantLimit {
+    // This is a "raw" identifier, which allows us to use most lang keywords here
+    pub r#type: LimitType,
+    // TODO: this should be Money, but "positive money"
+    // Or should it be "positive integer money"?
+    pub value: u32,
+    pub alarm_percentage: u8, // TODO: "number" in the spec. Probably needs to be [0,100].
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
-pub enum FundsInOutAction {
+pub struct InitialPositionAndLimits {
+    pub currency: Currency,
+    pub limit: Limit,
+    // TODO: should this be Amount? Check the spec.
+    pub initial_position: Amount,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
+pub enum ParticipantFundsInOutAction {
     RecordFundsIn,
     RecordFundsOutPrepareReserve,
-    RecordFundsOutCommit,
-    RecordFundsOutAbort,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct FundsInOut {
+pub struct ParticipantFundsInOut {
     pub transfer_id: CorrelationId,
-    pub action: FundsInOutAction,
+    pub action: ParticipantFundsInOutAction,
     pub external_reference: String, // From the spec, external_reference is only type: string, with no further validation
     pub reason: String, // From the spec, reason is only type: string, with no further validation
     pub amount: Money,
@@ -140,10 +149,34 @@ pub struct GetDfspAccounts {
     pub name: FspId,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CurrencyIsActive {
+    pub is_active: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
+pub struct NewParticipantLimit {
+    pub currency: Currency,
+    pub limit: ParticipantLimit,
+}
+
+pub struct PutParticipantLimit {
+    pub name: FspId,
+    pub limit: NewParticipantLimit,
+}
+
+pub struct PutParticipantAccount {
+    pub name: FspId,
+    pub account_id: SettlementAccountId,
+    pub set_active: bool,
+}
+
 pub struct PostParticipantSettlementFunds {
     pub account_id: SettlementAccountId,
     pub name: FspId,
-    pub funds: FundsInOut,
+    pub funds: ParticipantFundsInOut,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -192,11 +225,21 @@ pub struct PostCallbackUrl {
     pub hostname: String,
 }
 
+impl CentralLedgerRequest<NewParticipantLimit, ()> for PutParticipantLimit {
+    const METHOD: Method = Method::PUT;
+    fn path(&self) -> String { format!("/participants/{}/limits", self.name) }
+    fn body(&self) -> NewParticipantLimit { self.limit }
+}
+
+impl CentralLedgerRequest<CurrencyIsActive, ()> for PutParticipantAccount {
+    const METHOD: Method = Method::PUT;
+    fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
+    fn body(&self) -> CurrencyIsActive { CurrencyIsActive { is_active: self.set_active } }
+}
+
 impl CentralLedgerRequest<HubAccount, ()> for PostHubAccount {
     const METHOD: Method = Method::POST;
-    fn path(&self) -> String {
-        format!("/participants/{}/accounts", self.name)
-    }
+    fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
     fn body(&self) -> HubAccount { self.account.clone() }
 }
 
@@ -205,9 +248,7 @@ impl CentralLedgerRequest<CallbackUrl, ()> for PostCallbackUrl {
     // > Add/Update participant endpoints
     // https://github.com/mojaloop/central-ledger/blob/52b7494c9ec1160d9ab4427b05e6a12283a848f7/src/api/interface/swagger.json#L399
     const METHOD: Method = Method::POST;
-    fn path(&self) -> String {
-        format!("/participants/{}/endpoints", self.name)
-    }
+    fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
     fn body(&self) -> CallbackUrl {
         CallbackUrl {
             r#type: self.callback_type,
@@ -216,34 +257,26 @@ impl CentralLedgerRequest<CallbackUrl, ()> for PostCallbackUrl {
     }
 }
 
-impl CentralLedgerRequest<FundsInOut, ()> for PostParticipantSettlementFunds {
+impl CentralLedgerRequest<ParticipantFundsInOut, ()> for PostParticipantSettlementFunds {
     const METHOD: Method = Method::POST;
-    fn path(&self) -> String {
-        format!("/participants/{}/accounts/{}", self.name, self.account_id)
-    }
-    fn body(&self) -> FundsInOut { self.funds.clone() }
+    fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
+    fn body(&self) -> ParticipantFundsInOut { self.funds.clone() }
 }
 
 impl CentralLedgerRequest<Option<String>, DfspAccounts> for GetDfspAccounts {
     const METHOD: Method = Method::GET;
-    fn path(&self) -> String {
-        format!("/participants/{}/accounts", self.name)
-    }
+    fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
     fn body(&self) -> Option<String> { None }
 }
 
 impl CentralLedgerRequest<InitialPositionAndLimits, ()> for PostInitialPositionAndLimits {
     const METHOD: Method = Method::POST;
-    fn path(&self) -> String {
-        format!("/participants/{}/initialPositionAndLimits", self.name)
-    }
+    fn path(&self) -> String { format!("/participants/{}/initialPositionAndLimits", self.name) }
     fn body(&self) -> InitialPositionAndLimits { self.initial_position_and_limits }
 }
 
 impl CentralLedgerRequest<NewParticipant, ()> for PostParticipant {
     const METHOD: Method = Method::POST;
-    fn path(&self) -> String {
-        "/participants".to_string()
-    }
+    fn path(&self) -> String { "/participants".to_string() }
     fn body(&self) -> NewParticipant { self.participant.clone() }
 }

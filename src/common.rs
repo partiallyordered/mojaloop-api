@@ -5,6 +5,7 @@ use reqwest;
 pub enum Method {
     GET,
     POST,
+    PUT,
 }
 
 pub enum RequestError {
@@ -59,6 +60,9 @@ where
         },
         Method::GET => {
             c.get(format!("{}{}", host, r.path()))
+        },
+        Method::PUT => {
+            c.put(format!("{}{}", host, r.path())).json(&r.body())
         },
     };
 
