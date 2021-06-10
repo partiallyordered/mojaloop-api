@@ -44,8 +44,8 @@ pub trait CentralLedgerRequest<RequestBody: serde::Serialize, ResponseBody: serd
 }
 
 #[cfg(feature = "reqwest")]
-pub fn send_sync<RqBody, RespBody, R>(
-    c: &reqwest::blocking::Client,
+pub async fn send<RqBody, RespBody, R>(
+    c: &reqwest::Client,
     host: &str,
     r: R,
 ) -> Result<RespBody, RequestError>
@@ -67,9 +67,9 @@ where
     };
 
     let body_text = rq
-        .send()
+        .send().await
         .map_err(|err: reqwest::Error| RequestError::Connection(err))?
-        .text()
+        .text().await
         .map_err(|_| RequestError::InvalidJson)?;
 
     // TODO: we should check the response status to decide what to deserialize, instead of trying
