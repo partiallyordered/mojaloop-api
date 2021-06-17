@@ -25,6 +25,15 @@ pub struct AccountId(u64);
 #[serde(rename_all = "camelCase")]
 pub struct SettlementAccountId(u64);
 
+// TODO: need custom deserializer here: https://stackoverflow.com/a/65576570
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IsActive {
+    #[serde(rename = "1")]
+    Yes,
+    #[serde(rename = "0")]
+    No,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountType {
@@ -37,6 +46,15 @@ pub enum AccountType {
 pub enum LedgerAccountType {
     Position,
     Settlement,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AnyAccountType {
+    Position,
+    Settlement,
+    HubMultilateralSettlement,
+    HubReconciliation,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -111,6 +129,33 @@ pub enum PartyIdType {
     MSISDN,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
+pub struct ParticipantAccount {
+    pub id: SettlementAccountId,
+    pub ledger_account_type: AnyAccountType,
+    pub currency: Currency,
+    pub is_active: u8,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Participant {
+    pub name: FspId,
+    pub id: String,
+    // This should be DateTime, but the response comes back as a nested string. I.e.
+    // { created: "\"2021-01-01T01:23:34Z\"" }
+    #[serde(with = "serde_with::json::nested")]
+    pub created: DateTime,
+    pub is_active: u8,
+    pub accounts: Vec<ParticipantAccount>,
+}
+
+pub type Participants = Vec<Participant>;
+
+#[derive(Debug)]
+pub struct GetParticipants { }
+
 #[derive(Debug)]
 pub struct PostHubAccount {
     pub account: HubAccount,
@@ -134,7 +179,7 @@ pub struct DfspAccount {
     pub id: SettlementAccountId,
     pub ledger_account_type: LedgerAccountType,
     pub currency: Currency,
-    // TODO: this is an enum with value 0 or 1
+    // TODO: this is an enum with value 0 or 1. Probably use IsActive (see earlier in this file).
     pub is_active: u8,
     pub value: Amount,
     pub reserved_value: Amount,
@@ -261,6 +306,12 @@ impl CentralLedgerRequest<ParticipantFundsInOut, ()> for PostParticipantSettleme
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
     fn body(&self) -> ParticipantFundsInOut { self.funds.clone() }
+}
+
+impl CentralLedgerRequest<(), Participants> for GetParticipants {
+    const METHOD: Method = Method::GET;
+    fn path(&self) -> String { "/participants".to_string() }
+    fn body(&self) -> () {}
 }
 
 impl CentralLedgerRequest<Option<String>, DfspAccounts> for GetDfspAccounts {
