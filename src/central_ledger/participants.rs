@@ -26,6 +26,7 @@ pub struct AccountId(u64);
 pub struct SettlementAccountId(u64);
 
 // TODO: need custom deserializer here: https://stackoverflow.com/a/65576570
+// Even better might be to serialize/deserialize as a boolean.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IsActive {
     #[serde(rename = "1")]
@@ -34,21 +35,21 @@ pub enum IsActive {
     No,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum AccountType {
+pub enum HubAccountType {
     HubMultilateralSettlement,
     HubReconciliation,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LedgerAccountType {
     Position,
     Settlement,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AnyAccountType {
     Position,
@@ -60,13 +61,19 @@ pub enum AnyAccountType {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct HubAccount {
-    pub r#type: AccountType,
+    pub r#type: HubAccountType,
     pub currency: Currency,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NewParticipant {
+    // TODO: is it possible to fill the created_by field optionally? It's returned by GET
+    // /participants but I'm not sure it's possible to supply here.
+    // pub created_by: Option<String>,
+    // Looks like not:
+    //   Error: Mojaloop API error: {"errorInformation":{"errorCode":"3101","errorDescription":"Malformed syntax - \"createdBy\" is not allowed"}}
+    // But why? Is it something we're doing? Create an issue?
     pub name: FspId,
     pub currency: Currency,
 }
@@ -173,11 +180,17 @@ pub struct PostInitialPositionAndLimits {
     pub name: FspId,
 }
 
+// TODO: these are the same for hub and partipants except for the account types. It could be a good
+// idea to have two different types. We'd then have one type HubAccount with ledger_account_type:
+// HubAccountType and a DfspAccount type with ledger_account_type: LedgerAccountType, or perhaps
+// DfspAccountType. And as a result from a GET /participants/accounts request, we could have an
+// untagged enum type enum AnyAccount { HubAccount(HubAccount), DfspAccount(DfspAccount), } to
+// enable us to parse with a single type.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct DfspAccount {
     pub id: SettlementAccountId,
-    pub ledger_account_type: LedgerAccountType,
+    pub ledger_account_type: AnyAccountType,
     pub currency: Currency,
     // TODO: this is an enum with value 0 or 1. Probably use IsActive (see earlier in this file).
     pub is_active: u8,
@@ -308,10 +321,10 @@ impl CentralLedgerRequest<ParticipantFundsInOut, ()> for PostParticipantSettleme
     fn body(&self) -> ParticipantFundsInOut { self.funds.clone() }
 }
 
-impl CentralLedgerRequest<(), Participants> for GetParticipants {
+impl CentralLedgerRequest<Option<()>, Participants> for GetParticipants {
     const METHOD: Method = Method::GET;
     fn path(&self) -> String { "/participants".to_string() }
-    fn body(&self) -> () {}
+    fn body(&self) -> Option<()> { None }
 }
 
 impl CentralLedgerRequest<Option<String>, DfspAccounts> for GetDfspAccounts {
@@ -326,7 +339,7 @@ impl CentralLedgerRequest<InitialPositionAndLimits, ()> for PostInitialPositionA
     fn body(&self) -> InitialPositionAndLimits { self.initial_position_and_limits }
 }
 
-impl CentralLedgerRequest<NewParticipant, ()> for PostParticipant {
+impl CentralLedgerRequest<NewParticipant, Participant> for PostParticipant {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { "/participants".to_string() }
     fn body(&self) -> NewParticipant { self.participant.clone() }
