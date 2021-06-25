@@ -246,7 +246,7 @@ pub struct PostParticipantSettlementFunds {
     pub funds: ParticipantFundsInOut,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, EnumIter)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, EnumIter, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FspiopCallbackType {
     // The prefixes on these enums is fairly redundant, but mirrors the enums used in the API
@@ -282,8 +282,8 @@ const fn get_callback_path(callback_type: FspiopCallbackType) -> &'static str {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CallbackUrl {
-    r#type: FspiopCallbackType,
-    value: String,
+    pub r#type: FspiopCallbackType,
+    pub value: String,
 }
 
 pub struct PostCallbackUrl {
