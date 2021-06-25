@@ -3,6 +3,7 @@ use fspiox_api::common::{Currency,FspId,CorrelationId,Money,DateTime,Amount};
 use crate::common::Method;
 use derive_more::Display;
 pub use crate::common::CentralLedgerRequest;
+use strum_macros::EnumIter;
 
 // TODO:
 // - consistency for derived traits
@@ -201,6 +202,14 @@ pub struct DfspAccount {
 
 pub type DfspAccounts = Vec<DfspAccount>;
 
+pub type CallbackUrls = Vec<CallbackUrl>;
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct GetCallbackUrls {
+    pub name: FspId,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetDfspAccounts {
@@ -237,7 +246,7 @@ pub struct PostParticipantSettlementFunds {
     pub funds: ParticipantFundsInOut,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, EnumIter)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FspiopCallbackType {
     // The prefixes on these enums is fairly redundant, but mirrors the enums used in the API
@@ -325,6 +334,12 @@ impl CentralLedgerRequest<Option<()>, Participants> for GetParticipants {
     const METHOD: Method = Method::GET;
     fn path(&self) -> String { "/participants".to_string() }
     fn body(&self) -> Option<()> { None }
+}
+
+impl CentralLedgerRequest<Option<String>, CallbackUrls> for GetCallbackUrls {
+    const METHOD: Method = Method::GET;
+    fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
+    fn body(&self) -> Option<String> { None }
 }
 
 impl CentralLedgerRequest<Option<String>, DfspAccounts> for GetDfspAccounts {
