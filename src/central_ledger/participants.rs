@@ -295,19 +295,19 @@ pub struct PostCallbackUrl {
 impl CentralLedgerRequest<NewParticipantLimit, ()> for PutParticipantLimit {
     const METHOD: Method = Method::PUT;
     fn path(&self) -> String { format!("/participants/{}/limits", self.name) }
-    fn body(&self) -> NewParticipantLimit { self.limit }
+    fn body(&self) -> Option<NewParticipantLimit> { Some(self.limit) }
 }
 
 impl CentralLedgerRequest<CurrencyIsActive, ()> for PutParticipantAccount {
     const METHOD: Method = Method::PUT;
     fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
-    fn body(&self) -> CurrencyIsActive { CurrencyIsActive { is_active: self.set_active } }
+    fn body(&self) -> Option<CurrencyIsActive> { Some(CurrencyIsActive { is_active: self.set_active }) }
 }
 
 impl CentralLedgerRequest<HubAccount, ()> for PostHubAccount {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
-    fn body(&self) -> HubAccount { self.account.clone() }
+    fn body(&self) -> Option<HubAccount> { Some(self.account.clone()) }
 }
 
 impl CentralLedgerRequest<CallbackUrl, ()> for PostCallbackUrl {
@@ -316,33 +316,53 @@ impl CentralLedgerRequest<CallbackUrl, ()> for PostCallbackUrl {
     // https://github.com/mojaloop/central-ledger/blob/52b7494c9ec1160d9ab4427b05e6a12283a848f7/src/api/interface/swagger.json#L399
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
-    fn body(&self) -> CallbackUrl {
-        CallbackUrl {
-            r#type: self.callback_type,
-            value: format!("{}{}", self.hostname, get_callback_path(self.callback_type)),
-        }
+    fn body(&self) -> Option<CallbackUrl> {
+        Some(
+            CallbackUrl {
+                r#type: self.callback_type,
+                value: format!("{}{}", self.hostname, get_callback_path(self.callback_type)),
+            }
+        )
     }
 }
 
 impl CentralLedgerRequest<ParticipantFundsInOut, ()> for PostParticipantSettlementFunds {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
-    fn body(&self) -> ParticipantFundsInOut { self.funds.clone() }
+    fn body(&self) -> Option<ParticipantFundsInOut> { Some(self.funds.clone()) }
 }
 
-impl CentralLedgerRequest<Option<()>, Participants> for GetParticipants {
+impl CentralLedgerRequest<(), Participants> for GetParticipants {
     const METHOD: Method = Method::GET;
     fn path(&self) -> String { "/participants".to_string() }
     fn body(&self) -> Option<()> { None }
 }
 
-impl CentralLedgerRequest<Option<String>, CallbackUrls> for GetCallbackUrls {
+pub fn to_request<Req, Res, CLR>(clr: CLR, host: &str) -> Result<http::Request<String>, url::ParseError>
+where
+    CLR: CentralLedgerRequest<Req, Res>,
+    Req: serde::Serialize,
+    Res: serde::de::DeserializeOwned,
+{
+    use url::Url;
+    Ok(
+        http::request::Builder::new()
+            .uri(Url::parse(host)?.join(clr.path().as_str())?.as_str())
+            .method(CLR::METHOD)
+            .header("Content-Type", CLR::CONTENT_TYPE)
+            .header("Accept", CLR::ACCEPT)
+            .body(clr.body_json())
+            .unwrap()
+    )
+}
+
+impl CentralLedgerRequest<String, CallbackUrls> for GetCallbackUrls {
     const METHOD: Method = Method::GET;
     fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
     fn body(&self) -> Option<String> { None }
 }
 
-impl CentralLedgerRequest<Option<String>, DfspAccounts> for GetDfspAccounts {
+impl CentralLedgerRequest<String, DfspAccounts> for GetDfspAccounts {
     const METHOD: Method = Method::GET;
     fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
     fn body(&self) -> Option<String> { None }
@@ -351,11 +371,11 @@ impl CentralLedgerRequest<Option<String>, DfspAccounts> for GetDfspAccounts {
 impl CentralLedgerRequest<InitialPositionAndLimits, ()> for PostInitialPositionAndLimits {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { format!("/participants/{}/initialPositionAndLimits", self.name) }
-    fn body(&self) -> InitialPositionAndLimits { self.initial_position_and_limits }
+    fn body(&self) -> Option<InitialPositionAndLimits> { Some(self.initial_position_and_limits) }
 }
 
 impl CentralLedgerRequest<NewParticipant, Participant> for PostParticipant {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { "/participants".to_string() }
-    fn body(&self) -> NewParticipant { self.participant.clone() }
+    fn body(&self) -> Option<NewParticipant> { Some(self.participant.clone()) }
 }

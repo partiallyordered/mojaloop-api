@@ -13,6 +13,16 @@ pub enum Method {
     PUT,
 }
 
+impl From<Method> for http::Method {
+    fn from(method: Method) -> Self {
+        match method {
+            Method::GET => http::Method::GET,
+            Method::POST => http::Method::POST,
+            Method::PUT => http::Method::PUT,
+        }
+    }
+}
+
 pub enum RequestError {
     Mojaloop(fspiox_api::common::ErrorResponse),
     InvalidJson,
@@ -22,7 +32,11 @@ pub enum RequestError {
 
 // TODO: the trait bound on serde::Serialize should probably be behind a feature
 // TODO: should CentralLedgerRequest implement Serialize and Deserialize?
-pub trait CentralLedgerRequest<RequestBody: serde::Serialize, ResponseBody: serde::de::DeserializeOwned> {
+pub trait CentralLedgerRequest<RequestBody, ResponseBody>
+where
+    RequestBody: serde::Serialize,
+    ResponseBody: serde::de::DeserializeOwned,
+{
     // TODO: a constant function to parse a path and validate it. This means any errors specifying
     // a valid path can be caught at compile time instead of runtime. Look at the implementation of
     // http::uri::PathAndQuery. See: https://doc.rust-lang.org/reference/const_eval.html
@@ -33,7 +47,14 @@ pub trait CentralLedgerRequest<RequestBody: serde::Serialize, ResponseBody: serd
     // TODO: GET requests don't have a body, should/can we make the body optional? Do we need
     // different types, i.e. CentralLedgerRequestWithBody or CentralLedgerPostRequest? Should we
     // have a body_json and/or body_string method?
-    fn body(&self) -> RequestBody;
+    fn body(&self) -> Option<RequestBody>;
+
+    fn body_json(&self) -> String {
+        match self.body() {
+            None => "".to_string(),
+            Some(body) => serde_json::to_string(&body).unwrap()
+        }
+    }
 
     // TODO: replace with http::method::Method enums. These are in common use amongst various HTTP
     // crates.
