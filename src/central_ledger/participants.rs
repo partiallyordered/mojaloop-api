@@ -347,6 +347,12 @@ where
     use url::Url;
     Ok(
         http::request::Builder::new()
+            // TODO: probably we should accept a url::Uri as host, then
+            // .uri(host.join(clr.path().as_str()).unwrap().as_str())
+            // then make sure in unit testing that every path we would use here is a valid URI
+            // path, so that the unwrap() shouldn't panic (as long as host.join(path) is valid,
+            // which it should be, I think..?). Or should we take a string and strip any trailing
+            // slash, to allow a user to build a request with a relative uri using this function.
             .uri(Url::parse(host)?.join(clr.path().as_str())?.as_str())
             .method(CLR::METHOD)
             .header("Content-Type", CLR::CONTENT_TYPE)
