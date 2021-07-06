@@ -2,43 +2,52 @@ use serde::{Serialize, Deserialize};
 use crate::common::Method;
 pub use crate::common::CentralLedgerRequest;
 use derive_more::Display;
+use strum_macros::EnumString;
 
 // https://github.com/mojaloop/central-ledger/blob/01435fda1d61093b2e20ff2385e8d65393dac640/src/api/interface/swagger.json#L1214
 // > Create a settlement model. This will create any associated ledgerAccountTypes for every
 // > participant that matches the settlementModel's currency
 
-#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(ascii_case_insensitive)]
 pub enum SettlementGranularity {
     Gross,
     Net,
 }
 
-#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(ascii_case_insensitive)]
 pub enum SettlementInterchange {
     Bilateral,
     Multilateral,
 }
 
-#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(ascii_case_insensitive)]
 pub enum SettlementDelay {
     Deferred,
     Immediate,
 }
 
-#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(ascii_case_insensitive)]
 pub enum LedgerAccountType {
     InterchangeFee,
     Position,
 }
 
-#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(ascii_case_insensitive)]
 pub enum SettlementAccountType {
-    Position,
+    // Spec says POSITION, but this is not valid
+    // TODO: PR/Slack message/GH issue
+    // https://github.com/mojaloop/central-ledger/blob/01435fda1d61093b2e20ff2385e8d65393dac640/src/api/interface/swagger.json#L1619
+    // Position,
     Settlement,
     InterchangeFeeSettlement,
 }

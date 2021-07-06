@@ -1,9 +1,10 @@
 use serde::{Serialize, Deserialize};
-use fspiox_api::common::{Currency,FspId,CorrelationId,Money,DateTime,Amount};
+use fspiox_api::common::{Currency, FspId, CorrelationId, Money, DateTime, Amount};
 use crate::common::Method;
 use derive_more::Display;
 pub use crate::common::CentralLedgerRequest;
 use strum_macros::EnumIter;
+use strum_macros::EnumString;
 
 // TODO:
 // - consistency for derived traits
@@ -43,14 +44,15 @@ pub enum HubAccountType {
     HubReconciliation,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(ascii_case_insensitive)]
 pub enum LedgerAccountType {
     Position,
     Settlement,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, Display)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AnyAccountType {
     Position,
@@ -338,30 +340,6 @@ impl CentralLedgerRequest<(), Participants> for GetParticipants {
     fn body(&self) -> Option<()> { None }
 }
 
-pub fn to_request<Req, Res, CLR>(clr: CLR, host: &str) -> Result<http::Request<String>, url::ParseError>
-where
-    CLR: CentralLedgerRequest<Req, Res>,
-    Req: serde::Serialize,
-    Res: serde::de::DeserializeOwned,
-{
-    use url::Url;
-    Ok(
-        http::request::Builder::new()
-            // TODO: probably we should accept a url::Uri as host, then
-            // .uri(host.join(clr.path().as_str()).unwrap().as_str())
-            // then make sure in unit testing that every path we would use here is a valid URI
-            // path, so that the unwrap() shouldn't panic (as long as host.join(path) is valid,
-            // which it should be, I think..?). Or should we take a string and strip any trailing
-            // slash, to allow a user to build a request with a relative uri using this function.
-            .uri(Url::parse(host)?.join(clr.path().as_str())?.as_str())
-            .method(CLR::METHOD)
-            .header("Content-Type", CLR::CONTENT_TYPE)
-            .header("Accept", CLR::ACCEPT)
-            .body(clr.body_json())
-            .unwrap()
-    )
-}
-
 impl CentralLedgerRequest<String, CallbackUrls> for GetCallbackUrls {
     const METHOD: Method = Method::GET;
     fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
@@ -384,4 +362,28 @@ impl CentralLedgerRequest<NewParticipant, Participant> for PostParticipant {
     const METHOD: Method = Method::POST;
     fn path(&self) -> String { "/participants".to_string() }
     fn body(&self) -> Option<NewParticipant> { Some(self.participant.clone()) }
+}
+
+pub fn to_request<Req, Res, CLR>(clr: CLR, host: &str) -> Result<http::Request<String>, url::ParseError>
+where
+    CLR: CentralLedgerRequest<Req, Res>,
+    Req: serde::Serialize,
+    Res: serde::de::DeserializeOwned,
+{
+    use url::Url;
+    Ok(
+        http::request::Builder::new()
+            // TODO: probably we should accept a url::Uri as host, then
+            // .uri(host.join(clr.path().as_str()).unwrap().as_str())
+            // then make sure in unit testing that every path we would use here is a valid URI
+            // path, so that the unwrap() shouldn't panic (as long as host.join(path) is valid,
+            // which it should be, I think..?). Or should we take a string and strip any trailing
+            // slash, to allow a user to build a request with a relative uri using this function.
+            .uri(Url::parse(host)?.join(clr.path().as_str())?.as_str())
+            .method(CLR::METHOD)
+            .header("Content-Type", CLR::CONTENT_TYPE)
+            .header("Accept", CLR::ACCEPT)
+            .body(clr.body_json())
+            .unwrap()
+    )
 }
