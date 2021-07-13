@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
-use crate::common::Method;
-pub use crate::common::CentralLedgerRequest;
+use crate::common::{Method, MojaloopService};
+pub use crate::common::MojaloopRequest;
 use derive_more::Display;
 use strum_macros::EnumString;
 
@@ -73,8 +73,9 @@ pub struct PostSettlementModel {
     pub settlement_model: SettlementModel,
 }
 
-impl CentralLedgerRequest<SettlementModel, ()> for PostSettlementModel {
+impl MojaloopRequest<SettlementModel, ()> for PostSettlementModel {
     const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/settlementModels") }
     fn body(&self) -> Option<SettlementModel> { Some(self.settlement_model.clone()) }
 }

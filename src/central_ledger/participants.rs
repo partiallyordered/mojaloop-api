@@ -1,8 +1,8 @@
 use serde::{Serialize, Deserialize};
 use fspiox_api::common::{Currency, FspId, CorrelationId, Money, DateTime, Amount};
-use crate::common::Method;
+use crate::common::{Method, MojaloopService};
 use derive_more::Display;
-pub use crate::common::CentralLedgerRequest;
+pub use crate::common::MojaloopRequest;
 use strum_macros::EnumIter;
 use strum_macros::EnumString;
 
@@ -294,29 +294,33 @@ pub struct PostCallbackUrl {
     pub hostname: String,
 }
 
-impl CentralLedgerRequest<NewParticipantLimit, ()> for PutParticipantLimit {
+impl MojaloopRequest<NewParticipantLimit, ()> for PutParticipantLimit {
     const METHOD: Method = Method::PUT;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/limits", self.name) }
     fn body(&self) -> Option<NewParticipantLimit> { Some(self.limit) }
 }
 
-impl CentralLedgerRequest<CurrencyIsActive, ()> for PutParticipantAccount {
+impl MojaloopRequest<CurrencyIsActive, ()> for PutParticipantAccount {
     const METHOD: Method = Method::PUT;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
     fn body(&self) -> Option<CurrencyIsActive> { Some(CurrencyIsActive { is_active: self.set_active }) }
 }
 
-impl CentralLedgerRequest<HubAccount, ()> for PostHubAccount {
+impl MojaloopRequest<HubAccount, ()> for PostHubAccount {
     const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
     fn body(&self) -> Option<HubAccount> { Some(self.account.clone()) }
 }
 
-impl CentralLedgerRequest<CallbackUrl, ()> for PostCallbackUrl {
+impl MojaloopRequest<CallbackUrl, ()> for PostCallbackUrl {
     // Wondering if this should be a PUT? Yes. Yes it should. From the spec:
     // > Add/Update participant endpoints
     // https://github.com/mojaloop/central-ledger/blob/52b7494c9ec1160d9ab4427b05e6a12283a848f7/src/api/interface/swagger.json#L399
     const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
     fn body(&self) -> Option<CallbackUrl> {
         Some(
@@ -328,45 +332,51 @@ impl CentralLedgerRequest<CallbackUrl, ()> for PostCallbackUrl {
     }
 }
 
-impl CentralLedgerRequest<ParticipantFundsInOut, ()> for PostParticipantSettlementFunds {
+impl MojaloopRequest<ParticipantFundsInOut, ()> for PostParticipantSettlementFunds {
     const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
     fn body(&self) -> Option<ParticipantFundsInOut> { Some(self.funds.clone()) }
 }
 
-impl CentralLedgerRequest<(), Participants> for GetParticipants {
+impl MojaloopRequest<(), Participants> for GetParticipants {
     const METHOD: Method = Method::GET;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { "/participants".to_string() }
     fn body(&self) -> Option<()> { None }
 }
 
-impl CentralLedgerRequest<String, CallbackUrls> for GetCallbackUrls {
+impl MojaloopRequest<String, CallbackUrls> for GetCallbackUrls {
     const METHOD: Method = Method::GET;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
     fn body(&self) -> Option<String> { None }
 }
 
-impl CentralLedgerRequest<String, DfspAccounts> for GetDfspAccounts {
+impl MojaloopRequest<String, DfspAccounts> for GetDfspAccounts {
     const METHOD: Method = Method::GET;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
     fn body(&self) -> Option<String> { None }
 }
 
-impl CentralLedgerRequest<InitialPositionAndLimits, ()> for PostInitialPositionAndLimits {
+impl MojaloopRequest<InitialPositionAndLimits, ()> for PostInitialPositionAndLimits {
     const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { format!("/participants/{}/initialPositionAndLimits", self.name) }
     fn body(&self) -> Option<InitialPositionAndLimits> { Some(self.initial_position_and_limits) }
 }
 
-impl CentralLedgerRequest<NewParticipant, Participant> for PostParticipant {
+impl MojaloopRequest<NewParticipant, Participant> for PostParticipant {
     const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
     fn path(&self) -> String { "/participants".to_string() }
     fn body(&self) -> Option<NewParticipant> { Some(self.participant.clone()) }
 }
 
 pub fn to_request<Req, Res, CLR>(clr: CLR, host: &str) -> Result<http::Request<String>, url::ParseError>
 where
-    CLR: CentralLedgerRequest<Req, Res>,
+    CLR: MojaloopRequest<Req, Res>,
     Req: serde::Serialize,
     Res: serde::de::DeserializeOwned,
 {

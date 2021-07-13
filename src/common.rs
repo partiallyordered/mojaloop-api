@@ -6,11 +6,17 @@ use reqwest;
 
 // TODO: replace with http::method::Method enums. These are in common use amongst various HTTP
 // crates.
-#[derive(EnumString, strum_macros::Display)]
+#[derive(EnumString, strum_macros::Display, Debug)]
 pub enum Method {
     GET,
     POST,
     PUT,
+}
+
+#[derive(Debug)]
+pub enum MojaloopService {
+    CentralLedger,
+    CentralSettlement,
 }
 
 impl From<Method> for http::Method {
@@ -31,8 +37,8 @@ pub enum RequestError {
 }
 
 // TODO: the trait bound on serde::Serialize should probably be behind a feature
-// TODO: should CentralLedgerRequest implement Serialize and Deserialize?
-pub trait CentralLedgerRequest<RequestBody, ResponseBody>
+// TODO: should MojaloopRequest implement Serialize and Deserialize?
+pub trait MojaloopRequest<RequestBody, ResponseBody>
 where
     RequestBody: serde::Serialize,
     ResponseBody: serde::de::DeserializeOwned,
@@ -40,12 +46,14 @@ where
     // TODO: a constant function to parse a path and validate it. This means any errors specifying
     // a valid path can be caught at compile time instead of runtime. Look at the implementation of
     // http::uri::PathAndQuery. See: https://doc.rust-lang.org/reference/const_eval.html
+    // This might also be interesting: https://api.rocket.rs/v0.5-rc/rocket/macro.uri.html
+    // Could also just test each implementation to check its path parses correctly as a URI.
     // TODO: probably should be &String, or strictly a URI.
     // https://docs.rs/http/0.1.3/http/uri/index.html
     fn path(&self) -> String;
 
     // TODO: GET requests don't have a body, should/can we make the body optional? Do we need
-    // different types, i.e. CentralLedgerRequestWithBody or CentralLedgerPostRequest? Should we
+    // different types, i.e. MojaloopRequest or CentralLedgerPostRequest? Should we
     // have a body_json and/or body_string method?
     fn body(&self) -> Option<RequestBody>;
 
@@ -61,14 +69,15 @@ where
     const METHOD: Method;
     const CONTENT_TYPE: &'static str = "application/json";
     const ACCEPT: &'static str = "application/json";
+    const SERVICE: MojaloopService;
 
     // TODO: it's probably possible (and likely desirable) to move this function outside the trait.
-    // This would allow us to have an associated type for each CentralLedgerRequest. We could then
+    // This would allow us to have an associated type for each MojaloopRequest. We could then
     // refer to the response type like request::ResponseType for things like deserializing.
     //
     // We still can't impose the type constraint that the associated type must implement
     // serde::Deserialize until GATs land, but that's arguably not strictly required for
-    // implementation of the CentralLedgerRequest trait (it _is_ a JSON API so we _should_ be able
+    // implementation of the MojaloopRequest trait (it _is_ a JSON API so we _should_ be able
     // to de/serialize all requests and responses from/to json, but that _can_ be enforced in the
     // type constraints for this function, instead of on the trait).
     //
@@ -160,7 +169,7 @@ pub fn req_to_raw_http<RqBody, RespBody, CLR>(req: CLR) -> Vec<u8>
 where
     RqBody: serde::Serialize,
     RespBody: serde::de::DeserializeOwned,
-    CLR: CentralLedgerRequest<RqBody,RespBody>,
+    CLR: MojaloopRequest<RqBody,RespBody>,
 {
     // TODO: probably a good idea to calculate the content length and supply it. It is, however,
     // optional, so not urgent.
@@ -184,7 +193,7 @@ pub fn to_hyper_request<RqBody, RespBody, CLR>(req: CLR) -> Result<hyper::Reques
 where
     RqBody: serde::Serialize,
     RespBody: serde::de::DeserializeOwned,
-    CLR: CentralLedgerRequest<RqBody,RespBody>,
+    CLR: MojaloopRequest<RqBody,RespBody>,
 {
     let body = match CLR::METHOD {
         Method::GET => "".to_string(),
@@ -212,7 +221,7 @@ pub async fn send<RqBody, RespBody, R>(
 where
     RqBody: serde::Serialize,
     RespBody: serde::de::DeserializeOwned,
-    R: CentralLedgerRequest<RqBody,RespBody>,
+    R: MojaloopRequest<RqBody,RespBody>,
 {
     let rq = match R::METHOD {
         Method::POST => {
