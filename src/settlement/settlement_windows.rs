@@ -4,14 +4,15 @@ pub use crate::common::MojaloopRequest;
 use fspiox_api::common::{Currency, FspId, DateTime};
 use crate::central_ledger::participants::LedgerAccountType;
 use crate::settlement::settlement::SettlementId;
-use derive_more::Display;
+use derive_more::{Display, FromStr};
 use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+use strum_macros::EnumString;
 
 // https://url.spec.whatwg.org/#query-percent-encode-set
 const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
 
-#[derive(Serialize, Deserialize, Debug, Display)]
+#[derive(Serialize, Deserialize, Debug, Display, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowState {
     Open,
@@ -23,7 +24,7 @@ pub enum SettlementWindowState {
 
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, FromStr)]
 pub struct SettlementWindowId(u64);
 
 // TODO: what.. is.. this? What is the settlement window content id? Is it actually the same as the
