@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 # fspiox-api = { path = "/home/msk/projects/github.com/msk-/fspiox-api/" }
-fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "73f6e2d84f2f225bf5842d698c59244465a29980" }
+fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "3ba972632c9c4d8d4b2890780de805bf6e633c69", features = ["typescript_types"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 derive_more = "0.99"
@@ -25,6 +25,8 @@ itertools = "0.10"
 # Optional
 reqwest = { version = "0.11", optional = true, default-features = false, features = ["json"] }
 hyper = { version = "0.14", optional = true }
+ts-rs = { git = "https://github.com/Aleph-Alpha/ts-rs", rev = "ddd461522591a90b987b22dd05e06cfccbea6f5a", optional = true }
 
 [features]
 default = []
+typescript_types = ["ts-rs"]

@@ -4,10 +4,14 @@ pub use crate::common::MojaloopRequest;
 use derive_more::Display;
 use strum_macros::EnumString;
 
+#[cfg(feature = "typescript_types")]
+use ts_rs::TS;
+
 // https://github.com/mojaloop/central-ledger/blob/01435fda1d61093b2e20ff2385e8d65393dac640/src/api/interface/swagger.json#L1214
 // > Create a settlement model. This will create any associated ledgerAccountTypes for every
 // > participant that matches the settlementModel's currency
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(ascii_case_insensitive)]
@@ -16,6 +20,7 @@ pub enum SettlementGranularity {
     Net,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(ascii_case_insensitive)]
@@ -24,6 +29,7 @@ pub enum SettlementInterchange {
     Multilateral,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(ascii_case_insensitive)]
@@ -32,6 +38,7 @@ pub enum SettlementDelay {
     Immediate,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(ascii_case_insensitive)]
@@ -40,6 +47,7 @@ pub enum LedgerAccountType {
     Position,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, Clone, Copy, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(ascii_case_insensitive)]
@@ -52,6 +60,7 @@ pub enum SettlementAccountType {
     InterchangeFeeSettlement,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementModel {
