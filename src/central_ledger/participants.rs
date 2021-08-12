@@ -6,6 +6,9 @@ pub use crate::common::MojaloopRequest;
 use strum_macros::EnumIter;
 use strum_macros::EnumString;
 
+#[cfg(feature = "typescript_types")]
+use ts_rs::TS;
+
 // TODO:
 // - consistency for derived traits
 // - correct String vs &'static str etc. usage
@@ -27,8 +30,27 @@ pub struct AccountId(u64);
 #[serde(rename_all = "camelCase")]
 pub struct SettlementAccountId(u64);
 
+// TODO: contribute a PR to ts-rs to make this the default implementation for a newtype
+#[cfg(feature = "typescript_types")]
+impl TS for SettlementAccountId {
+    fn name() -> String {
+        "SettlementAccountId".to_string()
+    }
+
+    fn dependencies() -> Vec<(std::any::TypeId, String)> {
+        Vec::new()
+    }
+
+    fn transparent() -> bool { false }
+
+    fn decl() -> String {
+        "type SettlementAccountId = number".to_string()
+    }
+}
+
 // TODO: need custom deserializer here: https://stackoverflow.com/a/65576570
 // Even better might be to serialize/deserialize as a boolean.
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IsActive {
     #[serde(rename = "1")]
@@ -37,6 +59,7 @@ pub enum IsActive {
     No,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum HubAccountType {
@@ -44,6 +67,7 @@ pub enum HubAccountType {
     HubReconciliation,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(ascii_case_insensitive)]
@@ -52,6 +76,7 @@ pub enum LedgerAccountType {
     Settlement,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AnyAccountType {
@@ -61,6 +86,7 @@ pub enum AnyAccountType {
     HubReconciliation,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct HubAccount {
@@ -68,6 +94,7 @@ pub struct HubAccount {
     pub currency: Currency,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NewParticipant {
@@ -78,15 +105,17 @@ pub struct NewParticipant {
     //   Error: Mojaloop API error: {"errorInformation":{"errorCode":"3101","errorDescription":"Malformed syntax - \"createdBy\" is not allowed"}}
     // But why? Is it something we're doing? Create an issue?
     pub name: FspId,
-    pub currency: Currency,
+    pub currency: Option<Currency>,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LimitType {
     NetDebitCap,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct Limit {
@@ -97,6 +126,7 @@ pub struct Limit {
     pub value: u32,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct ParticipantLimit {
@@ -108,6 +138,7 @@ pub struct ParticipantLimit {
     pub alarm_percentage: u8, // TODO: "number" in the spec. Probably needs to be [0,100].
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct InitialPositionAndLimits {
@@ -117,6 +148,7 @@ pub struct InitialPositionAndLimits {
     pub initial_position: Amount,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum ParticipantFundsInOutAction {
@@ -124,6 +156,7 @@ pub enum ParticipantFundsInOutAction {
     RecordFundsOutPrepareReserve,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ParticipantFundsInOut {
@@ -134,11 +167,13 @@ pub struct ParticipantFundsInOut {
     pub amount: Money,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 pub enum PartyIdType {
     MSISDN,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct ParticipantAccount {
@@ -148,6 +183,7 @@ pub struct ParticipantAccount {
     pub is_active: u8,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Participant {
@@ -189,6 +225,7 @@ pub struct PostInitialPositionAndLimits {
 // DfspAccountType. And as a result from a GET /participants/accounts request, we could have an
 // untagged enum type enum AnyAccount { HubAccount(HubAccount), DfspAccount(DfspAccount), } to
 // enable us to parse with a single type.
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct DfspAccount {
@@ -218,12 +255,14 @@ pub struct GetDfspAccounts {
     pub name: FspId,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct CurrencyIsActive {
     pub is_active: bool,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct NewParticipantLimit {
@@ -248,6 +287,7 @@ pub struct PostParticipantSettlementFunds {
     pub funds: ParticipantFundsInOut,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, EnumIter, Display)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum FspiopCallbackType {
@@ -282,6 +322,7 @@ const fn get_callback_path(callback_type: FspiopCallbackType) -> &'static str {
     }
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CallbackUrl {
     pub r#type: FspiopCallbackType,
