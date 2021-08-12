@@ -87,7 +87,7 @@ pub enum AnyAccountType {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct HubAccount {
     pub r#type: HubAccountType,
