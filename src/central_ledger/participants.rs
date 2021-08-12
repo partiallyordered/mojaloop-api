@@ -105,7 +105,10 @@ pub struct NewParticipant {
     //   Error: Mojaloop API error: {"errorInformation":{"errorCode":"3101","errorDescription":"Malformed syntax - \"createdBy\" is not allowed"}}
     // But why? Is it something we're doing? Create an issue?
     pub name: FspId,
-    pub currency: Option<Currency>,
+    // TODO: In the API, currency is optional. But it seems that attempting to create a participant
+    // without a currency fails with an error "no hub currency account exists for this currency".
+    // Probably should create an issue upstream.
+    pub currency: Currency,
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
