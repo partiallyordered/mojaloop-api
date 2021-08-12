@@ -90,6 +90,7 @@ pub enum AnyAccountType {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct HubAccount {
+    #[cfg_attr(feature = "typescript_types", ts(rename = "type"))]
     pub r#type: HubAccountType,
     pub currency: Currency,
 }
@@ -122,7 +123,7 @@ pub enum LimitType {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct Limit {
-    // This is a "raw" identifier, which allows us to use most lang keywords here
+    #[cfg_attr(feature = "typescript_types", ts(rename = "type"))]
     pub r#type: LimitType,
     // TODO: this should be Money, but "positive money"
     // Or should it be "positive integer money"?
@@ -133,7 +134,7 @@ pub struct Limit {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct ParticipantLimit {
-    // This is a "raw" identifier, which allows us to use most lang keywords here
+    #[cfg_attr(feature = "typescript_types", ts(rename = "type"))]
     pub r#type: LimitType,
     // TODO: this should be Money, but "positive money"
     // Or should it be "positive integer money"?
@@ -328,6 +329,7 @@ const fn get_callback_path(callback_type: FspiopCallbackType) -> &'static str {
 #[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CallbackUrl {
+    #[cfg_attr(feature = "typescript_types", ts(rename = "type"))]
     pub r#type: FspiopCallbackType,
     pub value: String,
 }
