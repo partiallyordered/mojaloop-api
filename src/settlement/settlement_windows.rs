@@ -9,9 +9,13 @@ use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use strum_macros::EnumString;
 
+#[cfg(feature = "typescript_types")]
+use ts_rs::TS;
+
 // https://url.spec.whatwg.org/#query-percent-encode-set
 const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowState {
@@ -24,6 +28,7 @@ pub enum SettlementWindowState {
 
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, FromStr)]
 pub struct SettlementWindowId(u64);
 
@@ -31,9 +36,11 @@ pub struct SettlementWindowId(u64);
 // settlementwindowid?
 // Here's the spec: https://github.com/mojaloop/central-settlement/blob/e3c8cf8fc61543d1ab70880765ced23a9e98cb25/src/interface/swagger.json#L1135
 // "integer"
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SettlementWindowContentId(u64);
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementWindowContent {
@@ -47,6 +54,7 @@ pub struct SettlementWindowContent {
     pub settlement_id: Option<SettlementId>,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementWindow {
