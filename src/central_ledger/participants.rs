@@ -335,7 +335,7 @@ pub struct CallbackUrl {
 }
 
 pub struct PostCallbackUrl {
-    pub name: String,
+    pub name: FspId,
     pub callback_type: FspiopCallbackType,
     pub hostname: String,
 }
