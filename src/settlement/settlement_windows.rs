@@ -29,7 +29,7 @@ pub enum SettlementWindowState {
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, FromStr)]
+#[derive(Serialize, Deserialize, Debug, FromStr, Clone, Copy, Display)]
 pub struct SettlementWindowId(u64);
 
 // TODO: what.. is.. this? What is the settlement window content id? Is it actually the same as the
@@ -37,7 +37,7 @@ pub struct SettlementWindowId(u64);
 // Here's the spec: https://github.com/mojaloop/central-settlement/blob/e3c8cf8fc61543d1ab70880765ced23a9e98cb25/src/interface/swagger.json#L1135
 // "integer"
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, FromStr, Clone, Copy, Display)]
 pub struct SettlementWindowContentId(u64);
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
@@ -68,6 +68,24 @@ pub struct SettlementWindow {
 
 pub type SettlementWindows = Vec<SettlementWindow>;
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SettlementWindowClosurePayload {
+    pub reason: String,
+}
+
+impl SettlementWindowClosurePayload {
+    pub const STATE: SettlementWindowState = SettlementWindowState::Closed;
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CloseSettlementWindow {
+    pub id: SettlementWindowId,
+    pub payload: SettlementWindowClosurePayload,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSettlementWindows {
@@ -76,6 +94,15 @@ pub struct GetSettlementWindows {
     pub state: Option<SettlementWindowState>,
     pub from_date_time: Option<DateTime>,
     pub to_date_time: Option<DateTime>,
+}
+
+impl MojaloopRequest<SettlementWindowClosurePayload, ()> for CloseSettlementWindow {
+    const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
+
+    fn path(&self) -> String { format!("/settlementWindows/{}", self.id) }
+
+    fn body(&self) -> Option<SettlementWindowClosurePayload> { Some(self.payload.clone()) }
 }
 
 impl MojaloopRequest<(), SettlementWindows> for GetSettlementWindows {
