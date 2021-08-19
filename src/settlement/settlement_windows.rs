@@ -86,6 +86,7 @@ pub struct CloseSettlementWindow {
     pub payload: SettlementWindowClosurePayload,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSettlementWindows {
