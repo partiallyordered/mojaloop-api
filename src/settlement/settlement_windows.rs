@@ -69,14 +69,32 @@ pub struct SettlementWindow {
 pub type SettlementWindows = Vec<SettlementWindow>;
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, Display, EnumString, Clone, Copy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SettlementWindowCloseState {
+    Closed,
+}
+
+impl From<SettlementWindowCloseState> for SettlementWindowState {
+    fn from(item: SettlementWindowCloseState) -> Self {
+        match item {
+            SettlementWindowCloseState::Closed => SettlementWindowState::Closed
+        }
+    }
+}
+
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementWindowClosurePayload {
+    // Yes, the spec says that this is required. And yes, the spec says there's only one value:
+    // "CLOSED". It looks tricky to have it included by default with serde (i.e. without specifying
+    // it in the struct itself, even though we actually have no use for it) and it seems like
+    // overkill to make a custom implementation of serialize/deserialize. Additionally, serde
+    // doesn't handle associated consts. Rust won't let us put it on this struct (which seems to
+    // have been a conscious, reasoned decision)
+    pub state: SettlementWindowCloseState,
     pub reason: String,
-}
-
-impl SettlementWindowClosurePayload {
-    pub const STATE: SettlementWindowState = SettlementWindowState::Closed;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
