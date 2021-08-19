@@ -101,7 +101,7 @@ impl MojaloopRequest<SettlementWindowClosurePayload, ()> for CloseSettlementWind
     const METHOD: Method = Method::POST;
     const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
 
-    fn path(&self) -> String { format!("/settlementWindows/{}", self.id) }
+    fn path(&self) -> String { format!("/v2/settlementWindows/{}", self.id) }
 
     fn body(&self) -> Option<SettlementWindowClosurePayload> { Some(self.payload.clone()) }
 }
@@ -133,7 +133,7 @@ impl MojaloopRequest<(), SettlementWindows> for GetSettlementWindows {
                 )
                 .format("&")
         );
-        format!("/settlementWindows?{}", query_string)
+        format!("/v2/settlementWindows?{}", query_string)
     }
 
     fn body(&self) -> Option<()> { None }
