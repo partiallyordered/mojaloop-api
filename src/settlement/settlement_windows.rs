@@ -93,6 +93,8 @@ pub struct SettlementWindowClosurePayload {
     // overkill to make a custom implementation of serialize/deserialize. Additionally, serde
     // doesn't handle associated consts. Rust won't let us put it on this struct (which seems to
     // have been a conscious, reasoned decision)
+    // TODO: when I tested whether serde handles associated consts, I may have done so incorrectly;
+    // it's worth trying this again at some point.
     pub state: SettlementWindowCloseState,
     pub reason: String,
 }
