@@ -7,7 +7,7 @@ use crate::settlement::settlement::SettlementId;
 use derive_more::{Display, FromStr};
 use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
-use strum_macros::EnumString;
+use strum_macros::{ToString, EnumString};
 
 #[cfg(feature = "typescript_types")]
 use ts_rs::TS;
@@ -16,7 +16,7 @@ use ts_rs::TS;
 const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, Display, EnumString)]
+#[derive(Serialize, Deserialize, Debug, EnumString, ToString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowState {
@@ -70,7 +70,7 @@ pub struct SettlementWindow {
 pub type SettlementWindows = Vec<SettlementWindow>;
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, Display, EnumString, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, ToString, EnumString, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowCloseState {
