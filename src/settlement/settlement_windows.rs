@@ -18,6 +18,7 @@ const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(
 #[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowState {
     Open,
     Closed,
@@ -71,6 +72,7 @@ pub type SettlementWindows = Vec<SettlementWindow>;
 #[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Display, EnumString, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowCloseState {
     Closed,
 }
