@@ -59,7 +59,11 @@ pub struct SettlementWindowContent {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementWindow {
-    pub id: SettlementWindowId,
+    // Looks like the spec is incorrect here:
+    // https://github.com/mojaloop/central-settlement/blob/15d42ce259b3c1c57e81874c40ab5f5fb0981c6e/src/interface/swagger.json#L1104
+    // The actual response has this settlementWindowId property, rather than the `id` property
+    // TODO: raise issue
+    pub settlement_window_id: SettlementWindowId,
     pub reason: Option<String>,
     pub state: SettlementWindowState,
     pub created_date: DateTime,
