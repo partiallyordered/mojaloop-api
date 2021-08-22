@@ -109,12 +109,15 @@ impl MojaloopRequest<(), Settlements> for GetSettlements {
         use std::collections::HashMap;
         let mut query_params: HashMap<&str, String> = HashMap::new();
         if let Some(c) = self.currency { query_params.insert("currency", c.to_string()); }
-        if let Some(id) = &self.participant_id { query_params.insert("participantId", id.to_string()); }
+        if let Some(pid) = &self.participant_id { query_params.insert("participantId", pid.to_string()); }
+        if let Some(swid) = &self.settlement_window_id { query_params.insert("settlementWindowId", swid.to_string()); }
         if let Some(st) = &self.state { query_params.insert("state", st.to_string()); }
         if let Some(from) = self.from_date_time { query_params.insert("fromDateTime", from.to_string()); }
         if let Some(to) = self.to_date_time { query_params.insert("toDateTime", to.to_string()); }
+        if let Some(sw_from) = self.from_settlement_window_date_time { query_params.insert("fromSettlementWindowDateTime", sw_from.to_string()); }
+        if let Some(sw_to) = self.to_settlement_window_date_time { query_params.insert("toSettlementWindowDateTime", sw_to.to_string()); }
         // TODO: this assert isn't great, we'd prefer correct by construction, if possible
-        assert!(query_params.len() > 0, "At least one GET /settlementWindows query parameter is required");
+        assert!(query_params.len() > 0, "At least one GET /settlements query parameter is required");
         let query_string = format!(
             "{}",
             query_params
@@ -128,7 +131,7 @@ impl MojaloopRequest<(), Settlements> for GetSettlements {
                 )
                 .format("&")
         );
-        format!("/v2/settlementWindows?{}", query_string)
+        format!("/v2/settlements?{}", query_string)
     }
 
     fn body(&self) -> Option<()> { None }
