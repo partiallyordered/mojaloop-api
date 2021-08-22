@@ -47,11 +47,16 @@ pub struct SettlementWindowContentId(u64);
 pub struct SettlementWindowContent {
     // TODO: is id the settlement window ID? Must be, right?
     pub id: SettlementWindowContentId,
+    // TODO: not in the spec
+    // https://github.com/mojaloop/central-settlement/blob/15d42ce259b3c1c57e81874c40ab5f5fb0981c6e/src/interface/swagger.json#L1134
+    // Raise issue
+    pub settlement_window_id: SettlementWindowId,
     pub state: SettlementWindowState,
     pub ledger_account_type: LedgerAccountType,
     pub currency_id: Currency,
     pub created_date: DateTime,
     pub changed_date: Option<DateTime>,
+    // TODO: in spec, doesn't seem to be returned
     pub settlement_id: Option<SettlementId>,
 }
 

@@ -79,6 +79,11 @@ pub struct SettlementParticipant {
 pub struct Settlement {
     pub id: SettlementId,
     pub state: SettlementState,
+    // TODO: not in spec
+    // https://github.com/mojaloop/central-settlement/blob/15d42ce259b3c1c57e81874c40ab5f5fb0981c6e/src/interface/swagger.json#L1202
+    // Raise issue
+    pub created_date: DateTime,
+    pub changed_date: DateTime,
     pub settlement_windows: Vec<SettlementWindow>,
     pub participants: Vec<SettlementParticipant>,
 }
