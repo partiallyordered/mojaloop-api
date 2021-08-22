@@ -4,7 +4,7 @@ use fspiox_api::common::{Amount, Currency, FspId, DateTime};
 use crate::settlement::settlement_windows::{SettlementWindow, SettlementWindowId};
 pub use crate::common::MojaloopRequest;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
-use strum_macros::ToString;
+use strum_macros::{EnumString, ToString};
 use itertools::Itertools;
 
 #[cfg(feature = "typescript_types")]
@@ -32,8 +32,9 @@ pub struct ParticipantId(u64);
 pub struct ParticipantCurrencyId(u64);
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, ToString)]
+#[derive(Serialize, Deserialize, Debug, EnumString, ToString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementState {
     PendingSettlement,
     PsTransfersRecorded,
