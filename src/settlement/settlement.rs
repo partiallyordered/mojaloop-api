@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use crate::common::{Method, MojaloopService};
 use fspiox_api::common::{Amount, Currency, FspId, DateTime};
-use crate::settlement::settlement_windows::{SettlementWindow, SettlementWindowId};
+use crate::settlement::settlement_windows::{SettlementWindowId, SettlementWindowState, SettlementWindowContent};
 pub use crate::common::MojaloopRequest;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use strum_macros::{EnumString, ToString};
@@ -48,6 +48,24 @@ pub enum SettlementState {
 #[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct SettlementSettlementWindow {
+    // Note that we have this struct: `SettlementSettlementWindow` and the `SettlementWindow`
+    // struct which are almost the same. The difference is the `id` vs. `settlement_window_id`
+    // properties. The spec states the property should be called `id`, and when returning from GET
+    // /settlements, it is. But when returning from GET /settlementWindows the property is named
+    // `settlementWindowId`. Therefore, we have two different structs for parsing the results here.
+    // TODO: raise issue
+    pub id: SettlementWindowId,
+    pub reason: Option<String>,
+    pub state: SettlementWindowState,
+    pub created_date: DateTime,
+    pub changed_date: Option<DateTime>,
+    pub content: Option<Vec<SettlementWindowContent>>,
+}
+
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct NetSettlementAmount {
     pub amount: Amount,
     pub currency: Currency,
@@ -84,7 +102,7 @@ pub struct Settlement {
     // Raise issue
     pub created_date: DateTime,
     pub changed_date: DateTime,
-    pub settlement_windows: Vec<SettlementWindow>,
+    pub settlement_windows: Vec<SettlementSettlementWindow>,
     pub participants: Vec<SettlementParticipant>,
 }
 
