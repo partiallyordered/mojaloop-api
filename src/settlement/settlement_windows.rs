@@ -7,13 +7,18 @@ use crate::settlement::settlement::SettlementId;
 use derive_more::{Display, FromStr};
 use itertools::Itertools;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
-use strum_macros::EnumString;
+use strum_macros::{ToString, EnumString};
+
+#[cfg(feature = "typescript_types")]
+use ts_rs::TS;
 
 // https://url.spec.whatwg.org/#query-percent-encode-set
 const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
 
-#[derive(Serialize, Deserialize, Debug, Display, EnumString)]
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, EnumString, ToString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowState {
     Open,
     Closed,
@@ -24,33 +29,46 @@ pub enum SettlementWindowState {
 
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
-#[derive(Serialize, Deserialize, Debug, FromStr)]
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, FromStr, Clone, Copy, Display)]
 pub struct SettlementWindowId(u64);
 
 // TODO: what.. is.. this? What is the settlement window content id? Is it actually the same as the
 // settlementwindowid?
 // Here's the spec: https://github.com/mojaloop/central-settlement/blob/e3c8cf8fc61543d1ab70880765ced23a9e98cb25/src/interface/swagger.json#L1135
 // "integer"
-#[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, FromStr, Clone, Copy, Display)]
 pub struct SettlementWindowContentId(u64);
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementWindowContent {
     // TODO: is id the settlement window ID? Must be, right?
     pub id: SettlementWindowContentId,
+    // TODO: not in the spec
+    // https://github.com/mojaloop/central-settlement/blob/15d42ce259b3c1c57e81874c40ab5f5fb0981c6e/src/interface/swagger.json#L1134
+    // Raise issue
+    pub settlement_window_id: SettlementWindowId,
     pub state: SettlementWindowState,
     pub ledger_account_type: LedgerAccountType,
     pub currency_id: Currency,
     pub created_date: DateTime,
     pub changed_date: Option<DateTime>,
+    // TODO: in spec, doesn't seem to be returned
     pub settlement_id: Option<SettlementId>,
 }
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementWindow {
-    pub id: SettlementWindowId,
+    // Looks like the spec is incorrect here:
+    // https://github.com/mojaloop/central-settlement/blob/15d42ce259b3c1c57e81874c40ab5f5fb0981c6e/src/interface/swagger.json#L1104
+    // The actual response has this settlementWindowId property, rather than the `id` property
+    // TODO: raise issue
+    pub settlement_window_id: SettlementWindowId,
     pub reason: Option<String>,
     pub state: SettlementWindowState,
     pub created_date: DateTime,
@@ -60,6 +78,46 @@ pub struct SettlementWindow {
 
 pub type SettlementWindows = Vec<SettlementWindow>;
 
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, ToString, EnumString, Clone, Copy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum SettlementWindowCloseState {
+    Closed,
+}
+
+impl From<SettlementWindowCloseState> for SettlementWindowState {
+    fn from(item: SettlementWindowCloseState) -> Self {
+        match item {
+            SettlementWindowCloseState::Closed => SettlementWindowState::Closed
+        }
+    }
+}
+
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SettlementWindowClosurePayload {
+    // Yes, the spec says that this is required. And yes, the spec says there's only one value:
+    // "CLOSED". It looks tricky to have it included by default with serde (i.e. without specifying
+    // it in the struct itself, even though we actually have no use for it) and it seems like
+    // overkill to make a custom implementation of serialize/deserialize. Additionally, serde
+    // doesn't handle associated consts. Rust won't let us put it on this struct (which seems to
+    // have been a conscious, reasoned decision)
+    // TODO: when I tested whether serde handles associated consts, I may have done so incorrectly;
+    // it's worth trying this again at some point.
+    pub state: SettlementWindowCloseState,
+    pub reason: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CloseSettlementWindow {
+    pub id: SettlementWindowId,
+    pub payload: SettlementWindowClosurePayload,
+}
+
+#[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSettlementWindows {
@@ -68,6 +126,15 @@ pub struct GetSettlementWindows {
     pub state: Option<SettlementWindowState>,
     pub from_date_time: Option<DateTime>,
     pub to_date_time: Option<DateTime>,
+}
+
+impl MojaloopRequest<SettlementWindowClosurePayload, ()> for CloseSettlementWindow {
+    const METHOD: Method = Method::POST;
+    const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
+
+    fn path(&self) -> String { format!("/v2/settlementWindows/{}", self.id) }
+
+    fn body(&self) -> Option<SettlementWindowClosurePayload> { Some(self.payload.clone()) }
 }
 
 impl MojaloopRequest<(), SettlementWindows> for GetSettlementWindows {
@@ -97,7 +164,7 @@ impl MojaloopRequest<(), SettlementWindows> for GetSettlementWindows {
                 )
                 .format("&")
         );
-        format!("/settlementWindows?{}", query_string)
+        format!("/v2/settlementWindows?{}", query_string)
     }
 
     fn body(&self) -> Option<()> { None }
