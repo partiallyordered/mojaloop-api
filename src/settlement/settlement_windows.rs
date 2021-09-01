@@ -50,7 +50,9 @@ pub struct SettlementWindowContent {
     // TODO: not in the spec
     // https://github.com/mojaloop/central-settlement/blob/15d42ce259b3c1c57e81874c40ab5f5fb0981c6e/src/interface/swagger.json#L1134
     // Raise issue
-    pub settlement_window_id: SettlementWindowId,
+    // Additionally, returned from POST /v2/settlements but not from GET /v2/settlements. Also, a
+    // complete waste of space AFAICT.
+    pub settlement_window_id: Option<SettlementWindowId>,
     pub state: SettlementWindowState,
     pub ledger_account_type: LedgerAccountType,
     pub currency_id: Currency,
