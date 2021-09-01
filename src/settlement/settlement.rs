@@ -128,11 +128,18 @@ pub type Settlements = Vec<Settlement>;
 #[cfg_attr(feature = "typescript_types", derive(TS))]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct WindowParametersNewSettlement {
+    pub id: SettlementWindowId,
+}
+
+#[cfg_attr(feature = "typescript_types", derive(TS))]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct NewSettlement {
     /// The name of the settlement model
     pub settlement_model: String,
     pub reason: String,
-    pub settlement_windows: Vec<SettlementWindowId>,
+    pub settlement_windows: Vec<WindowParametersNewSettlement>,
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
@@ -145,7 +152,7 @@ pub struct PostSettlement {
 impl MojaloopRequest<NewSettlement, Settlement> for PostSettlement {
     const METHOD: Method = Method::POST;
     const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
-    fn path(&self) -> String { format!("/v2/settlement") }
+    fn path(&self) -> String { format!("/v2/settlements") }
     fn body(&self) -> Option<NewSettlement> { Some(self.new_settlement.clone()) }
 }
 
