@@ -130,9 +130,9 @@ pub type Settlements = Vec<Settlement>;
 #[serde(rename_all = "camelCase")]
 pub struct NewSettlement {
     /// The name of the settlement model
-    settlement_model: String,
-    reason: String,
-    settlement_windows: Vec<SettlementWindowId>,
+    pub settlement_model: String,
+    pub reason: String,
+    pub settlement_windows: Vec<SettlementWindowId>,
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]

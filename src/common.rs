@@ -209,6 +209,8 @@ where
     hyper::Request::builder()
         .uri(req.path())
         .method(method)
+        .header("Content-Type", CLR::CONTENT_TYPE)
+        .header("Accept", CLR::ACCEPT)
         .body(hyper::Body::from(body))
 }
 
