@@ -113,7 +113,7 @@ pub struct NewParticipant {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display, EnumString)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LimitType {
     NetDebitCap,
@@ -279,6 +279,10 @@ pub struct PutParticipantLimit {
     pub limit: NewParticipantLimit,
 }
 
+pub struct GetParticipantLimits {
+    pub name: FspId,
+}
+
 pub struct PutParticipantAccount {
     pub name: FspId,
     pub account_id: SettlementAccountId,
@@ -338,6 +342,13 @@ pub struct PostCallbackUrl {
     pub name: FspId,
     pub callback_type: FspiopCallbackType,
     pub hostname: String,
+}
+
+impl MojaloopRequest<(), Vec<NewParticipantLimit>> for GetParticipantLimits {
+    const METHOD: Method = Method::GET;
+    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
+    fn path(&self) -> String { format!("/participants/{}/limits", self.name) }
+    fn body(&self) -> Option<()> { None }
 }
 
 impl MojaloopRequest<NewParticipantLimit, ()> for PutParticipantLimit {
