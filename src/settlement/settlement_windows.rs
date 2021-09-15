@@ -16,7 +16,7 @@ use ts_rs::TS;
 const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, EnumString, ToString)]
+#[derive(Serialize, Deserialize, Debug, EnumString, ToString, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowState {
