@@ -25,6 +25,10 @@ pub enum SettlementWindowState {
     PendingSettlement,
     Settled,
     Aborted,
+    // TODO: doesn't exist in the spec but is the intermediate state returned immediately after
+    // closure. Presumably this is the state that the window is put in before it is actually
+    // closed. Raise an issue about this.
+    Processing,
 }
 
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
