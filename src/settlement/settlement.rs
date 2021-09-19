@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::common::{Method, MojaloopService};
-use fspiox_api::common::{Amount, Currency, FspId, DateTime};
+use fspiox_api::{Amount, Currency, FspId, DateTime};
 use crate::settlement::settlement_windows::{SettlementWindowId, SettlementWindowState, SettlementWindowContent};
 pub use crate::common::MojaloopRequest;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};

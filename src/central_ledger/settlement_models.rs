@@ -74,7 +74,7 @@ pub struct SettlementModel {
     pub settlement_delay: SettlementDelay,
     pub settlement_granularity: SettlementGranularity,
     pub settlement_interchange: SettlementInterchange,
-    pub currency: fspiox_api::common::Currency,
+    pub currency: fspiox_api::Currency,
 }
 
 #[derive(Debug)]

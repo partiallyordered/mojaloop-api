@@ -1,4 +1,4 @@
-use fspiox_api::common::ErrorResponse;
+use fspiox_api::ErrorResponse;
 use strum_macros::EnumString;
 use thiserror::Error;
 #[cfg(feature = "reqwest")]
@@ -30,7 +30,7 @@ impl From<Method> for http::Method {
 }
 
 pub enum RequestError {
-    Mojaloop(fspiox_api::common::ErrorResponse),
+    Mojaloop(fspiox_api::ErrorResponse),
     InvalidJson,
     #[cfg(feature = "reqwest")]
     Connection(reqwest::Error),
@@ -109,7 +109,7 @@ pub enum MlApiErr {
     #[error("Couldn't parse string response. Message: {0}")]
     CouldNotParseResponse(String),
     #[error("Mojaloop API error: {0}")]
-    MojaloopApiError(fspiox_api::common::ErrorResponse),
+    MojaloopApiError(fspiox_api::ErrorResponse),
 }
 
 fn fail<RespBody, E: std::fmt::Display>(bs: &[u8], e: E) -> Result<RespBody, MlApiErr> {
@@ -157,7 +157,7 @@ where
     match http_resp.status().as_u16() {
         200..=299 => serde_json::from_slice::<RespBody>(&bs[body_index..]).or_else(|e| fail(bs, e)),
         400..=599 =>
-            match serde_json::from_slice::<fspiox_api::common::ErrorResponse>(&bs[body_index..]) {
+            match serde_json::from_slice::<fspiox_api::ErrorResponse>(&bs[body_index..]) {
                 Ok(ml_api_err) => Err(MlApiErr::MojaloopApiError(ml_api_err)),
                 Err(m) => fail(bs, m),
             },

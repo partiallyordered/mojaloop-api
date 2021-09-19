@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use crate::common::{Method, MojaloopService};
 pub use crate::common::MojaloopRequest;
-use fspiox_api::common::{Currency, FspId, DateTime};
+use fspiox_api::{Currency, FspId, DateTime};
 use crate::central_ledger::participants::LedgerAccountType;
 use crate::settlement::settlement::SettlementId;
 use derive_more::{Display, FromStr};
