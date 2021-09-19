@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use fspiox_api::common::{Currency, FspId, CorrelationId, Money, DateTime, Amount};
+use fspiox_api::{Currency, FspId, CorrelationId, Money, DateTime, Amount};
 use crate::common::{Method, MojaloopService};
 use derive_more::Display;
 pub use crate::common::MojaloopRequest;
