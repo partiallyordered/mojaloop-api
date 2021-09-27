@@ -3,6 +3,8 @@ use hyper::body::Body;
 use fspiox_api::clients::FspiopClient as MojaloopClient;
 use crate::central_ledger::{settlement_models, participants};
 use fspiox_api::clients::{request, NoBody};
+#[cfg(feature = "clients-kube")]
+use fspiox_api::clients::k8s;
 
 pub struct Client {
     sender: conn::SendRequest<Body>,
