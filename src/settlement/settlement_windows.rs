@@ -3,18 +3,13 @@ use fspiox_api::{Currency, FspId, DateTime};
 use crate::central_ledger::participants::LedgerAccountType;
 use crate::settlement::settlement::SettlementId;
 use derive_more::{Display, FromStr};
-use itertools::Itertools;
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use strum_macros::{ToString, EnumString};
 
 #[cfg(feature = "typescript_types")]
 use ts_rs::TS;
 
-// https://url.spec.whatwg.org/#query-percent-encode-set
-const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
-
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, EnumString, ToString, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, EnumString, ToString, PartialEq, Eq, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementWindowState {
@@ -44,7 +39,7 @@ pub struct SettlementWindowId(u64);
 pub struct SettlementWindowContentId(u64);
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementWindowContent {
     // TODO: is id the settlement window ID? Must be, right?
@@ -114,7 +109,7 @@ pub struct SettlementWindowClosurePayload {
     pub reason: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CloseSettlementWindow {
     pub id: SettlementWindowId,
@@ -122,7 +117,7 @@ pub struct CloseSettlementWindow {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSettlementWindows {
     pub currency: Option<Currency>,
@@ -132,6 +127,7 @@ pub struct GetSettlementWindows {
     pub to_date_time: Option<DateTime>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GetSettlementWindow {
     pub id: SettlementWindowId,
 }
@@ -157,6 +153,12 @@ pub mod requests {
 
     impl From<GetSettlementWindows> for http::Request<hyper::Body> {
         fn from(req: GetSettlementWindows) -> http::Request<hyper::Body> {
+            use itertools::Itertools;
+            use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+
+            // https://url.spec.whatwg.org/#query-percent-encode-set
+            const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
+
             use std::collections::HashMap;
             let mut query_params: HashMap<&str, String> = HashMap::new();
             if let Some(c) = req.currency { query_params.insert("currency", c.to_string()); }
