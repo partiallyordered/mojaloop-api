@@ -32,3 +32,4 @@ ts-rs = { git = "https://github.com/Aleph-Alpha/ts-rs", rev = "ddd461522591a90b9
 default = []
 typescript_types = ["ts-rs"]
 clients = ["hyper", "fspiox-api/clients"]
+clients-kube = ["clients", "fspiox-api/clients-kube"]
