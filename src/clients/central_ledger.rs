@@ -1,7 +1,7 @@
 use hyper::client::conn;
 use hyper::body::Body;
 use fspiox_api::clients::FspiopClient as MojaloopClient;
-use crate::central_ledger::participants;
+use crate::central_ledger::{settlement_models, participants};
 use fspiox_api::clients::{request, NoBody};
 
 pub struct Client {
@@ -20,6 +20,7 @@ pub enum Request {
     GetDfspAccounts(participants::GetDfspAccounts),
     PostInitialPositionAndLimits(participants::PostInitialPositionAndLimits),
     PostParticipant(participants::PostParticipant),
+    PostSettlementModel(settlement_models::PostSettlementModel),
 }
 
 impl From<Request> for http::Request<hyper::Body> {
@@ -36,6 +37,7 @@ impl From<Request> for http::Request<hyper::Body> {
             Request::GetDfspAccounts(i) => i.into(),
             Request::PostInitialPositionAndLimits(i) => i.into(),
             Request::PostParticipant(i) => i.into(),
+            Request::PostSettlementModel(i) => i.into(),
         }
     }
 }
@@ -68,6 +70,7 @@ pub enum Response {
     GetDfspAccounts(participants::DfspAccounts),
     PostInitialPositionAndLimits(NoBody),
     PostParticipant(participants::Participant),
+    PostSettlementModel(NoBody),
 }
 
 impl Client {
@@ -97,6 +100,8 @@ impl Client {
                     request::<PostInitialPositionAndLimits, NoBody>(&mut self.sender, m).await?),
                 Request::PostParticipant(m) => Response::PostParticipant(
                     request::<PostParticipant, Participant>(&mut self.sender, m).await?),
+                Request::PostSettlementModel(m) => Response::PostSettlementModel(
+                    request::<settlement_models::PostSettlementModel, NoBody>(&mut self.sender, m).await?),
             }
         )
     }
