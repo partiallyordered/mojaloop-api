@@ -9,23 +9,23 @@ use ts_rs::TS;
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct SettlementId(u64);
 
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct ParticipantId(u64);
 
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ParticipantCurrencyId(u64);
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug, EnumString, ToString)]
+#[derive(Serialize, Deserialize, Debug, EnumString, ToString, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum SettlementState {
@@ -39,7 +39,7 @@ pub enum SettlementState {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementSettlementWindow {
     // Note that we have this struct: `SettlementSettlementWindow` and the `SettlementWindow`
@@ -57,7 +57,7 @@ pub struct SettlementSettlementWindow {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct NetSettlementAmount {
     pub amount: Amount,
@@ -65,7 +65,7 @@ pub struct NetSettlementAmount {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementAccount {
     pub id: ParticipantCurrencyId,
@@ -77,7 +77,7 @@ pub struct SettlementAccount {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SettlementParticipant {
     pub id: ParticipantId,
@@ -85,7 +85,7 @@ pub struct SettlementParticipant {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Settlement {
     pub id: SettlementId,
@@ -100,7 +100,7 @@ pub struct Settlement {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GetSettlements {
     pub currency: Option<Currency>,
@@ -136,7 +136,7 @@ pub struct NewSettlement {
 }
 
 #[cfg_attr(feature = "typescript_types", derive(TS))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PostSettlement {
     pub new_settlement: NewSettlement,
