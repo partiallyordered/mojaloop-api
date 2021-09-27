@@ -1,17 +1,10 @@
 use serde::{Serialize, Deserialize};
-use crate::common::{Method, MojaloopService};
 use fspiox_api::{Amount, Currency, FspId, DateTime};
 use crate::settlement::settlement_windows::{SettlementWindowId, SettlementWindowState, SettlementWindowContent};
-pub use crate::common::MojaloopRequest;
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use strum_macros::{EnumString, ToString};
-use itertools::Itertools;
 
 #[cfg(feature = "typescript_types")]
 use ts_rs::TS;
-
-// https://url.spec.whatwg.org/#query-percent-encode-set
-const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
 
 // TODO: is this actually u64? It's likely whatever type MySQL uses as an auto-incrementing
 // integer.
@@ -149,33 +142,40 @@ pub struct PostSettlement {
     pub new_settlement: NewSettlement,
 }
 
-impl MojaloopRequest<NewSettlement, Settlement> for PostSettlement {
-    const METHOD: Method = Method::POST;
-    const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
-    fn path(&self) -> String { format!("/v2/settlements") }
-    fn body(&self) -> Option<NewSettlement> { Some(self.new_settlement.clone()) }
-}
+#[cfg(feature = "hyper")]
+pub mod requests {
+    use crate::settlement::settlement::*;
+    use crate::clients::requests::{get, post};
+    use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+    use itertools::Itertools;
+    use fspiox_api::clients::NoBody;
 
-impl MojaloopRequest<(), Settlements> for GetSettlements {
-    const METHOD: Method = Method::GET;
-    const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
+    // https://url.spec.whatwg.org/#query-percent-encode-set
+    const QUERY_ENCODE_SET: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'#');
 
-    fn path(&self) -> String {
-        use std::collections::HashMap;
-        let mut query_params: HashMap<&str, String> = HashMap::new();
-        if let Some(c) = self.currency { query_params.insert("currency", c.to_string()); }
-        if let Some(pid) = &self.participant_id { query_params.insert("participantId", pid.to_string()); }
-        if let Some(swid) = &self.settlement_window_id { query_params.insert("settlementWindowId", swid.to_string()); }
-        if let Some(st) = &self.state { query_params.insert("state", st.to_string()); }
-        if let Some(from) = self.from_date_time { query_params.insert("fromDateTime", from.to_string()); }
-        if let Some(to) = self.to_date_time { query_params.insert("toDateTime", to.to_string()); }
-        if let Some(sw_from) = self.from_settlement_window_date_time { query_params.insert("fromSettlementWindowDateTime", sw_from.to_string()); }
-        if let Some(sw_to) = self.to_settlement_window_date_time { query_params.insert("toSettlementWindowDateTime", sw_to.to_string()); }
-        // TODO: this assert isn't great, we'd prefer correct by construction, if possible
-        assert!(query_params.len() > 0, "At least one GET /settlements query parameter is required");
-        let query_string = format!(
-            "{}",
-            query_params
+    impl From<PostSettlement> for http::Request<hyper::Body> {
+        fn from(req: PostSettlement) -> http::Request<hyper::Body> {
+            post("/v2/settlements", &req.new_settlement)
+        }
+    }
+
+    impl From<GetSettlements> for http::Request<hyper::Body> {
+        fn from(req: GetSettlements) -> http::Request<hyper::Body> {
+            use std::collections::HashMap;
+            let mut query_params: HashMap<&str, String> = HashMap::new();
+            if let Some(c) = req.currency { query_params.insert("currency", c.to_string()); }
+            if let Some(pid) = &req.participant_id { query_params.insert("participantId", pid.to_string()); }
+            if let Some(swid) = &req.settlement_window_id { query_params.insert("settlementWindowId", swid.to_string()); }
+            if let Some(st) = &req.state { query_params.insert("state", st.to_string()); }
+            if let Some(from) = req.from_date_time { query_params.insert("fromDateTime", from.to_string()); }
+            if let Some(to) = req.to_date_time { query_params.insert("toDateTime", to.to_string()); }
+            if let Some(sw_from) = req.from_settlement_window_date_time { query_params.insert("fromSettlementWindowDateTime", sw_from.to_string()); }
+            if let Some(sw_to) = req.to_settlement_window_date_time { query_params.insert("toSettlementWindowDateTime", sw_to.to_string()); }
+            // TODO: this assert isn't great, we'd prefer correct by construction, if possible
+            assert!(query_params.len() > 0, "At least one GET /settlements query parameter is required");
+            let query_string = format!(
+                "{}",
+                query_params
                 .iter()
                 .map(|(k, v)|
                     format!(
@@ -185,9 +185,8 @@ impl MojaloopRequest<(), Settlements> for GetSettlements {
                     )
                 )
                 .format("&")
-        );
-        format!("/v2/settlements?{}", query_string)
+            );
+            get(format!("/v2/settlements?{}", query_string).as_str(), &NoBody)
+        }
     }
-
-    fn body(&self) -> Option<()> { None }
 }

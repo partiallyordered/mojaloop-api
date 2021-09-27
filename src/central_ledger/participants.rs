@@ -1,8 +1,6 @@
 use serde::{Serialize, Deserialize};
 use fspiox_api::{Currency, FspId, CorrelationId, Money, DateTime, Amount};
-use crate::common::{Method, MojaloopService};
 use derive_more::Display;
-pub use crate::common::MojaloopRequest;
 use strum_macros::EnumIter;
 use strum_macros::EnumString;
 
@@ -203,21 +201,21 @@ pub struct Participant {
 
 pub type Participants = Vec<Participant>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GetParticipants { }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PostHubAccount {
     pub account: HubAccount,
     pub name: FspId, // typically Hub or hub. TODO: a bit of documentation about where this is configured, and how a user can find it.
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PostParticipant {
     pub participant: NewParticipant,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PostInitialPositionAndLimits {
     pub initial_position_and_limits: InitialPositionAndLimits,
     pub name: FspId,
@@ -247,13 +245,13 @@ pub type DfspAccounts = Vec<DfspAccount>;
 
 pub type CallbackUrls = Vec<CallbackUrl>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GetCallbackUrls {
     pub name: FspId,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct GetDfspAccounts {
     pub name: FspId,
@@ -274,21 +272,25 @@ pub struct NewParticipantLimit {
     pub limit: ParticipantLimit,
 }
 
+#[derive(Debug, Clone)]
 pub struct PutParticipantLimit {
     pub name: FspId,
     pub limit: NewParticipantLimit,
 }
 
+#[derive(Debug, Clone)]
 pub struct GetParticipantLimits {
     pub name: FspId,
 }
 
+#[derive(Debug, Clone)]
 pub struct PutParticipantAccount {
     pub name: FspId,
     pub account_id: SettlementAccountId,
     pub set_active: bool,
 }
 
+#[derive(Debug, Clone)]
 pub struct PostParticipantSettlementFunds {
     pub account_id: SettlementAccountId,
     pub name: FspId,
@@ -338,95 +340,97 @@ pub struct CallbackUrl {
     pub value: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct PostCallbackUrl {
     pub name: FspId,
     pub callback_type: FspiopCallbackType,
     pub hostname: String,
 }
 
-impl MojaloopRequest<(), Vec<NewParticipantLimit>> for GetParticipantLimits {
-    const METHOD: Method = Method::GET;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/limits", self.name) }
-    fn body(&self) -> Option<()> { None }
-}
+// TODO: usage of unwrap() on the result of the request builder tells us that we should replace
+// many of our types that can _only_ accept ASCII [[32-126], [128-255]].
+// https://docs.rs/http/0.2.4/http/header/struct.HeaderValue.html#method.from_bytes
+// In fact, here we're really assuming that none of these values contain non-printable ASCII
+// characters.
 
-impl MojaloopRequest<NewParticipantLimit, ()> for PutParticipantLimit {
-    const METHOD: Method = Method::PUT;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/limits", self.name) }
-    fn body(&self) -> Option<NewParticipantLimit> { Some(self.limit) }
-}
+#[cfg(feature = "hyper")]
+pub mod requests {
+    use crate::central_ledger::participants::*;
+    use fspiox_api::clients::NoBody;
+    use crate::clients::requests::{get, post, put};
 
-impl MojaloopRequest<CurrencyIsActive, ()> for PutParticipantAccount {
-    const METHOD: Method = Method::PUT;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
-    fn body(&self) -> Option<CurrencyIsActive> { Some(CurrencyIsActive { is_active: self.set_active }) }
-}
-
-impl MojaloopRequest<HubAccount, ()> for PostHubAccount {
-    const METHOD: Method = Method::POST;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
-    fn body(&self) -> Option<HubAccount> { Some(self.account.clone()) }
-}
-
-impl MojaloopRequest<CallbackUrl, ()> for PostCallbackUrl {
-    // Wondering if this should be a PUT? Yes. Yes it should. From the spec:
-    // > Add/Update participant endpoints
-    // https://github.com/mojaloop/central-ledger/blob/52b7494c9ec1160d9ab4427b05e6a12283a848f7/src/api/interface/swagger.json#L399
-    const METHOD: Method = Method::POST;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
-    fn body(&self) -> Option<CallbackUrl> {
-        Some(
-            CallbackUrl {
-                r#type: self.callback_type,
-                value: format!("{}{}", self.hostname, get_callback_path(self.callback_type)),
-            }
-        )
+    impl From<GetParticipantLimits> for http::Request<hyper::Body> {
+        fn from(req: GetParticipantLimits) -> http::Request<hyper::Body> {
+            get(format!("/participants/{}/limits", req.name).as_str(), &NoBody)
+        }
     }
-}
 
-impl MojaloopRequest<ParticipantFundsInOut, ()> for PostParticipantSettlementFunds {
-    const METHOD: Method = Method::POST;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/accounts/{}", self.name, self.account_id) }
-    fn body(&self) -> Option<ParticipantFundsInOut> { Some(self.funds.clone()) }
-}
+    impl From<PutParticipantLimit> for http::Request<hyper::Body> {
+        fn from(req: PutParticipantLimit) -> http::Request<hyper::Body> {
+            put(format!("/participants/{}/limits", req.name).as_str(), &req.limit)
+        }
+    }
 
-impl MojaloopRequest<(), Participants> for GetParticipants {
-    const METHOD: Method = Method::GET;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { "/participants".to_string() }
-    fn body(&self) -> Option<()> { None }
-}
+    impl From<PutParticipantAccount> for http::Request<hyper::Body> {
+        fn from(req: PutParticipantAccount) -> http::Request<hyper::Body> {
+            put(
+                format!("/participants/{}/accounts/{}", req.name, req.account_id).as_str(),
+                &CurrencyIsActive { is_active: req.set_active },
+            )
+        }
+    }
 
-impl MojaloopRequest<String, CallbackUrls> for GetCallbackUrls {
-    const METHOD: Method = Method::GET;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/endpoints", self.name) }
-    fn body(&self) -> Option<String> { None }
-}
+    impl From<PostHubAccount> for http::Request<hyper::Body> {
+        fn from(req: PostHubAccount) -> http::Request<hyper::Body> {
+            post(format!("/participants/{}/accounts", req.name).as_str(), &req.account)
+        }
+    }
 
-impl MojaloopRequest<String, DfspAccounts> for GetDfspAccounts {
-    const METHOD: Method = Method::GET;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/accounts", self.name) }
-    fn body(&self) -> Option<String> { None }
-}
+    impl From<PostCallbackUrl> for http::Request<hyper::Body> {
+        fn from(req: PostCallbackUrl) -> http::Request<hyper::Body> {
+            post(format!("/participants/{}/endpoints", req.name).as_str(), &CallbackUrl {
+                r#type: req.callback_type,
+                value: format!("{}{}", req.hostname, get_callback_path(req.callback_type)),
+            })
+        }
+    }
 
-impl MojaloopRequest<InitialPositionAndLimits, ()> for PostInitialPositionAndLimits {
-    const METHOD: Method = Method::POST;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { format!("/participants/{}/initialPositionAndLimits", self.name) }
-    fn body(&self) -> Option<InitialPositionAndLimits> { Some(self.initial_position_and_limits) }
-}
+    impl From<PostParticipantSettlementFunds> for http::Request<hyper::Body> {
+        fn from(req: PostParticipantSettlementFunds) -> http::Request<hyper::Body> {
+            post(format!("/participants/{}/accounts/{}", req.name, req.account_id).as_str(), &req.funds)
+        }
+    }
 
-impl MojaloopRequest<NewParticipant, Participant> for PostParticipant {
-    const METHOD: Method = Method::POST;
-    const SERVICE: MojaloopService = MojaloopService::CentralLedger;
-    fn path(&self) -> String { "/participants".to_string() }
-    fn body(&self) -> Option<NewParticipant> { Some(self.participant.clone()) }
+    impl From<GetParticipants> for http::Request<hyper::Body> {
+        fn from(_req: GetParticipants) -> http::Request<hyper::Body> {
+            get("/participants", &NoBody)
+        }
+    }
+
+    impl From<GetCallbackUrls> for http::Request<hyper::Body> {
+        fn from(req: GetCallbackUrls) -> http::Request<hyper::Body> {
+            get(format!("/participants/{}/endpoints", req.name).as_str(), &NoBody)
+        }
+    }
+
+    impl From<GetDfspAccounts> for http::Request<hyper::Body> {
+        fn from(req: GetDfspAccounts) -> http::Request<hyper::Body> {
+            get(format!("/participants/{}/accounts", req.name).as_str(), &NoBody)
+        }
+    }
+
+    impl From<PostInitialPositionAndLimits> for http::Request<hyper::Body> {
+        fn from(req: PostInitialPositionAndLimits) -> http::Request<hyper::Body> {
+            post(
+                format!("/participants/{}/initialPositionAndLimits", req.name).as_str(),
+                &req.initial_position_and_limits
+            )
+        }
+    }
+
+    impl From<PostParticipant> for http::Request<hyper::Body> {
+        fn from(req: PostParticipant) -> http::Request<hyper::Body> {
+            post("/participants", &req.participant)
+        }
+    }
 }

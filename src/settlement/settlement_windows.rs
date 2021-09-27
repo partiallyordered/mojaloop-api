@@ -1,6 +1,4 @@
 use serde::{Serialize, Deserialize};
-use crate::common::{Method, MojaloopService};
-pub use crate::common::MojaloopRequest;
 use fspiox_api::{Currency, FspId, DateTime};
 use crate::central_ledger::participants::LedgerAccountType;
 use crate::settlement::settlement::SettlementId;
@@ -138,53 +136,50 @@ pub struct GetSettlementWindow {
     pub id: SettlementWindowId,
 }
 
-impl MojaloopRequest<SettlementWindowClosurePayload, ()> for CloseSettlementWindow {
-    const METHOD: Method = Method::POST;
-    const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
+#[cfg(feature = "hyper")]
+pub mod requests {
+    use crate::settlement::settlement_windows::*;
+    use fspiox_api::clients::NoBody;
+    use crate::clients::requests::{get, post};
 
-    fn path(&self) -> String { format!("/v2/settlementWindows/{}", self.id) }
-
-    fn body(&self) -> Option<SettlementWindowClosurePayload> { Some(self.payload.clone()) }
-}
-
-impl MojaloopRequest<(), SettlementWindow> for GetSettlementWindow {
-    const METHOD: Method = Method::GET;
-    const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
-
-    fn path(&self) -> String { format!("/v2/settlementWindows/{}", self.id) }
-
-    fn body(&self) -> Option<()> { None }
-}
-
-impl MojaloopRequest<(), SettlementWindows> for GetSettlementWindows {
-    const METHOD: Method = Method::GET;
-    const SERVICE: MojaloopService = MojaloopService::CentralSettlement;
-
-    fn path(&self) -> String {
-        use std::collections::HashMap;
-        let mut query_params: HashMap<&str, String> = HashMap::new();
-        if let Some(c) = self.currency { query_params.insert("currency", c.to_string()); }
-        if let Some(id) = &self.participant_id { query_params.insert("participantId", id.to_string()); }
-        if let Some(st) = &self.state { query_params.insert("state", st.to_string()); }
-        if let Some(from) = self.from_date_time { query_params.insert("fromDateTime", from.to_string()); }
-        if let Some(to) = self.to_date_time { query_params.insert("toDateTime", to.to_string()); }
-        // TODO: this assert isn't great, we'd prefer correct by construction, if possible
-        assert!(query_params.len() > 0, "At least one GET /settlementWindows query parameter is required");
-        let query_string = format!(
-            "{}",
-            query_params
-                .iter()
-                .map(|(k, v)|
-                    format!(
-                        "{}={}",
-                        utf8_percent_encode(k, &QUERY_ENCODE_SET),
-                        utf8_percent_encode(v, &QUERY_ENCODE_SET),
-                    )
-                )
-                .format("&")
-        );
-        format!("/v2/settlementWindows?{}", query_string)
+    // A PUT, you say? Yes I rather think so. But alas..
+    impl From<CloseSettlementWindow> for http::Request<hyper::Body> {
+        fn from(req: CloseSettlementWindow) -> http::Request<hyper::Body> {
+            post(format!("/v2/settlementWindows/{}", req.id).as_str(), &req.payload)
+        }
     }
 
-    fn body(&self) -> Option<()> { None }
+    impl From<GetSettlementWindow> for http::Request<hyper::Body> {
+        fn from(req: GetSettlementWindow) -> http::Request<hyper::Body> {
+            get(format!("/v2/settlementWindows/{}", req.id).as_str(), &NoBody)
+        }
+    }
+
+    impl From<GetSettlementWindows> for http::Request<hyper::Body> {
+        fn from(req: GetSettlementWindows) -> http::Request<hyper::Body> {
+            use std::collections::HashMap;
+            let mut query_params: HashMap<&str, String> = HashMap::new();
+            if let Some(c) = req.currency { query_params.insert("currency", c.to_string()); }
+            if let Some(id) = &req.participant_id { query_params.insert("participantId", id.to_string()); }
+            if let Some(st) = &req.state { query_params.insert("state", st.to_string()); }
+            if let Some(from) = req.from_date_time { query_params.insert("fromDateTime", from.to_string()); }
+            if let Some(to) = req.to_date_time { query_params.insert("toDateTime", to.to_string()); }
+            // TODO: this assert isn't great, we'd prefer correct by construction, if possible
+            assert!(query_params.len() > 0, "At least one GET /settlementWindows query parameter is required");
+            let query_string = format!(
+                "{}",
+                query_params
+                    .iter()
+                    .map(|(k, v)|
+                        format!(
+                            "{}={}",
+                            utf8_percent_encode(k, &QUERY_ENCODE_SET),
+                            utf8_percent_encode(v, &QUERY_ENCODE_SET),
+                        )
+                    )
+                    .format("&")
+            );
+            get(format!("/v2/settlementWindows?{}", query_string).as_str(), &NoBody)
+        }
+    }
 }
