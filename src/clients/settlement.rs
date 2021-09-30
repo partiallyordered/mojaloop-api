@@ -2,7 +2,7 @@ use hyper::client::conn;
 use hyper::body::Body;
 use fspiox_api::clients::FspiopClient as MojaloopClient;
 use crate::settlement::{settlement, settlement_windows};
-use fspiox_api::clients::{request, NoBody};
+use fspiox_api::clients::{request, NoBody, ResponseBody};
 #[cfg(feature = "clients-kube")]
 use fspiox_api::clients::k8s;
 
@@ -80,11 +80,11 @@ impl MojaloopClient for Client {
 
 #[derive(Debug)]
 pub enum Response {
-    PostSettlement(settlement::Settlement),
-    GetSettlements(settlement::Settlements),
-    GetSettlementWindow(settlement_windows::SettlementWindow),
-    GetSettlementWindows(settlement_windows::SettlementWindows),
-    CloseSettlementWindow(NoBody),
+    PostSettlement(ResponseBody<settlement::Settlement>),
+    GetSettlements(ResponseBody<settlement::Settlements>),
+    GetSettlementWindow(ResponseBody<settlement_windows::SettlementWindow>),
+    GetSettlementWindows(ResponseBody<settlement_windows::SettlementWindows>),
+    CloseSettlementWindow(ResponseBody<NoBody>),
 }
 
 impl Client {
