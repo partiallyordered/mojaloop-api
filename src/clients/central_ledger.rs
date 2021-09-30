@@ -2,7 +2,7 @@ use hyper::client::conn;
 use hyper::body::Body;
 use fspiox_api::clients::FspiopClient as MojaloopClient;
 use crate::central_ledger::{settlement_models, participants};
-use fspiox_api::clients::{request, NoBody};
+use fspiox_api::clients::{request, NoBody, ResponseBody};
 #[cfg(feature = "clients-kube")]
 use fspiox_api::clients::k8s;
 
@@ -138,58 +138,50 @@ impl MojaloopClient for Client {
 
 #[derive(Debug)]
 pub enum Response {
-    GetParticipantLimits(Vec<participants::NewParticipantLimit>),
-    PutParticipantLimit(NoBody),
-    PutParticipantAccount(NoBody),
-    PostHubAccount(NoBody),
-    PostCallbackUrl(NoBody),
-    PostParticipantSettlementFunds(NoBody),
-    GetParticipants(participants::Participants),
-    GetCallbackUrls(participants::CallbackUrls),
-    GetDfspAccounts(participants::DfspAccounts),
-    PostInitialPositionAndLimits(NoBody),
-    PostParticipant(participants::Participant),
-    PostSettlementModel(NoBody),
+    GetParticipantLimits(ResponseBody<Vec<participants::NewParticipantLimit>>),
+    PutParticipantLimit(ResponseBody<NoBody>),
+    PutParticipantAccount(ResponseBody<NoBody>),
+    PostHubAccount(ResponseBody<NoBody>),
+    PostCallbackUrl(ResponseBody<NoBody>),
+    PostParticipantSettlementFunds(ResponseBody<NoBody>),
+    GetParticipants(ResponseBody<participants::Participants>),
+    GetCallbackUrls(ResponseBody<participants::CallbackUrls>),
+    GetDfspAccounts(ResponseBody<participants::DfspAccounts>),
+    PostInitialPositionAndLimits(ResponseBody<NoBody>),
+    PostParticipant(ResponseBody<participants::Participant>),
+    PostSettlementModel(ResponseBody<NoBody>),
 }
 
 impl Client {
-    pub async fn send<Vec<participants::NewParticipantLimit>>(
-        &mut self, msg: participants::GetParticipantLimits
-    ) -> fspiox_api::clients::Result<Vec<participants::NewParticipantLimit>> {
-
+    pub async fn send(&mut self, msg: Request) -> fspiox_api::clients::Result<Response> {
+        use crate::central_ledger::participants::*;
+        Ok(
+            match msg {
+                Request::GetParticipantLimits(m) => Response::GetParticipantLimits(
+                    request::<GetParticipantLimits, Vec<NewParticipantLimit>>(&mut self.sender, m).await?),
+                Request::PutParticipantLimit(m) => Response::PutParticipantLimit(
+                    request::<PutParticipantLimit, NoBody>(&mut self.sender, m).await?),
+                Request::PutParticipantAccount(m) => Response::PutParticipantAccount(
+                    request::<PutParticipantAccount, NoBody>(&mut self.sender, m).await?),
+                Request::PostHubAccount(m) => Response::PostHubAccount(
+                    request::<PostHubAccount, NoBody>(&mut self.sender, m).await?),
+                Request::PostCallbackUrl(m) => Response::PostCallbackUrl(
+                    request::<PostCallbackUrl, NoBody>(&mut self.sender, m).await?),
+                Request::PostParticipantSettlementFunds(m) => Response::PostParticipantSettlementFunds(
+                    request::<PostParticipantSettlementFunds, NoBody>(&mut self.sender, m).await?),
+                Request::GetParticipants(m) => Response::GetParticipants(
+                    request::<GetParticipants, Participants>(&mut self.sender, m).await?),
+                Request::GetCallbackUrls(m) => Response::GetCallbackUrls(
+                    request::<GetCallbackUrls, CallbackUrls>(&mut self.sender, m).await?),
+                Request::GetDfspAccounts(m) => Response::GetDfspAccounts(
+                    request::<GetDfspAccounts, DfspAccounts>(&mut self.sender, m).await?),
+                Request::PostInitialPositionAndLimits(m) => Response::PostInitialPositionAndLimits(
+                    request::<PostInitialPositionAndLimits, NoBody>(&mut self.sender, m).await?),
+                Request::PostParticipant(m) => Response::PostParticipant(
+                    request::<PostParticipant, Participant>(&mut self.sender, m).await?),
+                Request::PostSettlementModel(m) => Response::PostSettlementModel(
+                    request::<settlement_models::PostSettlementModel, NoBody>(&mut self.sender, m).await?),
+            }
+        )
     }
 }
-
-// impl Client {
-//     pub async fn send(&mut self, msg: Request) -> fspiox_api::clients::Result<Response> {
-//         use crate::central_ledger::participants::*;
-//         Ok(
-//             match msg {
-//                 Request::GetParticipantLimits(m) => Response::GetParticipantLimits(
-//                     request::<GetParticipantLimits, Vec<NewParticipantLimit>>(&mut self.sender, m).await?),
-//                 Request::PutParticipantLimit(m) => Response::PutParticipantLimit(
-//                     request::<PutParticipantLimit, NoBody>(&mut self.sender, m).await?),
-//                 Request::PutParticipantAccount(m) => Response::PutParticipantAccount(
-//                     request::<PutParticipantAccount, NoBody>(&mut self.sender, m).await?),
-//                 Request::PostHubAccount(m) => Response::PostHubAccount(
-//                     request::<PostHubAccount, NoBody>(&mut self.sender, m).await?),
-//                 Request::PostCallbackUrl(m) => Response::PostCallbackUrl(
-//                     request::<PostCallbackUrl, NoBody>(&mut self.sender, m).await?),
-//                 Request::PostParticipantSettlementFunds(m) => Response::PostParticipantSettlementFunds(
-//                     request::<PostParticipantSettlementFunds, NoBody>(&mut self.sender, m).await?),
-//                 Request::GetParticipants(m) => Response::GetParticipants(
-//                     request::<GetParticipants, Participants>(&mut self.sender, m).await?),
-//                 Request::GetCallbackUrls(m) => Response::GetCallbackUrls(
-//                     request::<GetCallbackUrls, CallbackUrls>(&mut self.sender, m).await?),
-//                 Request::GetDfspAccounts(m) => Response::GetDfspAccounts(
-//                     request::<GetDfspAccounts, DfspAccounts>(&mut self.sender, m).await?),
-//                 Request::PostInitialPositionAndLimits(m) => Response::PostInitialPositionAndLimits(
-//                     request::<PostInitialPositionAndLimits, NoBody>(&mut self.sender, m).await?),
-//                 Request::PostParticipant(m) => Response::PostParticipant(
-//                     request::<PostParticipant, Participant>(&mut self.sender, m).await?),
-//                 Request::PostSettlementModel(m) => Response::PostSettlementModel(
-//                     request::<settlement_models::PostSettlementModel, NoBody>(&mut self.sender, m).await?),
-//             }
-//         )
-//     }
-// }
