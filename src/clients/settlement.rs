@@ -6,16 +6,48 @@ use fspiox_api::clients::{request, NoBody};
 #[cfg(feature = "clients-kube")]
 use fspiox_api::clients::k8s;
 
+#[derive(Debug)]
 pub struct Client {
     sender: conn::SendRequest<Body>,
 }
 
+#[derive(Debug)]
 pub enum Request {
     PostSettlement(settlement::PostSettlement),
     GetSettlements(settlement::GetSettlements),
     CloseSettlementWindow(settlement_windows::CloseSettlementWindow),
     GetSettlementWindow(settlement_windows::GetSettlementWindow),
     GetSettlementWindows(settlement_windows::GetSettlementWindows),
+}
+
+impl From<settlement::PostSettlement> for Request {
+    fn from(i: settlement::PostSettlement) -> Request {
+        Request::PostSettlement(i)
+    }
+}
+
+impl From<settlement::GetSettlements> for Request {
+    fn from(i: settlement::GetSettlements) -> Request {
+        Request::GetSettlements(i)
+    }
+}
+
+impl From<settlement_windows::CloseSettlementWindow> for Request {
+    fn from(i: settlement_windows::CloseSettlementWindow) -> Request {
+        Request::CloseSettlementWindow(i)
+    }
+}
+
+impl From<settlement_windows::GetSettlementWindow> for Request {
+    fn from(i: settlement_windows::GetSettlementWindow) -> Request {
+        Request::GetSettlementWindow(i)
+    }
+}
+
+impl From<settlement_windows::GetSettlementWindows> for Request {
+    fn from(i: settlement_windows::GetSettlementWindows) -> Request {
+        Request::GetSettlementWindows(i)
+    }
 }
 
 impl From<Request> for http::Request<hyper::Body> {
@@ -34,9 +66,9 @@ impl MojaloopClient for Client {
     #[cfg(feature = "clients-kube")]
     const K8S_PARAMS: k8s::KubernetesParams =
         k8s::KubernetesParams {
-            label: "app.kubernetes.io/name=quoting-service",
-            container_name: "quoting-service",
-            port: k8s::Port::Name("http-api"),
+            label: "app.kubernetes.io/name=centralsettlement-service",
+            container_name: "centralsettlement-service",
+            port: k8s::Port::Number(3007),
         };
 
     fn from_sender(sender: conn::SendRequest<Body>) -> Client {
@@ -46,6 +78,7 @@ impl MojaloopClient for Client {
     }
 }
 
+#[derive(Debug)]
 pub enum Response {
     PostSettlement(settlement::Settlement),
     GetSettlements(settlement::Settlements),

@@ -27,9 +27,13 @@ arrayvec = { version = "0.7.1", features = ["serde"] }
 reqwest = { version = "0.11", optional = true, default-features = false, features = ["json"] }
 hyper = { version = "0.14", optional = true }
 ts-rs = { git = "https://github.com/Aleph-Alpha/ts-rs", rev = "ddd461522591a90b987b22dd05e06cfccbea6f5a", optional = true }
+tokio = { version = "1.6.1", features = ["full"], optional = true }
+kube = { git = "https://github.com/kazk/kube-rs", rev = "e1b02c57d9ebd5bbf0d93b244a7be4b7438d3b66", features = ["ws"], optional = true }
+kube-runtime = { version = "0.56.0", optional = true }
+k8s-openapi = { version = "0.11.0", default-features = false, features = ["v1_20"], optional = true }
 
 [features]
 default = []
 typescript_types = ["ts-rs"]
 clients = ["hyper", "fspiox-api/clients"]
-clients-kube = ["clients", "fspiox-api/clients-kube"]
+clients-kube = ["clients", "fspiox-api/clients-kube", "tokio", "k8s-openapi", "kube"]
