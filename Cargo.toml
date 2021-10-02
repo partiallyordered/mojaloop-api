@@ -7,8 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fspiox-api = { path = "/home/msk/projects/github.com/msk-/fspiox-api/", features = ["typescript_types"] }
-# fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "a63b1d9bf1ad0df2371e567d4c9daf16ba53b56b", features = ["typescript_types"] }
+# fspiox-api = { path = "/home/msk/projects/github.com/msk-/fspiox-api/", features = ["typescript_types"] }
+fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "cfc58492fd521fad7ed9ec48bf5a5f085a8c8c5b", features = ["typescript_types"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 derive_more = "0.99"
