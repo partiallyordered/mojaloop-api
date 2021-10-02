@@ -11,57 +11,6 @@ pub struct Client {
     sender: conn::SendRequest<Body>,
 }
 
-#[derive(Debug)]
-pub enum Request {
-    PostSettlement(settlement::PostSettlement),
-    GetSettlements(settlement::GetSettlements),
-    CloseSettlementWindow(settlement_windows::CloseSettlementWindow),
-    GetSettlementWindow(settlement_windows::GetSettlementWindow),
-    GetSettlementWindows(settlement_windows::GetSettlementWindows),
-}
-
-impl From<settlement::PostSettlement> for Request {
-    fn from(i: settlement::PostSettlement) -> Request {
-        Request::PostSettlement(i)
-    }
-}
-
-impl From<settlement::GetSettlements> for Request {
-    fn from(i: settlement::GetSettlements) -> Request {
-        Request::GetSettlements(i)
-    }
-}
-
-impl From<settlement_windows::CloseSettlementWindow> for Request {
-    fn from(i: settlement_windows::CloseSettlementWindow) -> Request {
-        Request::CloseSettlementWindow(i)
-    }
-}
-
-impl From<settlement_windows::GetSettlementWindow> for Request {
-    fn from(i: settlement_windows::GetSettlementWindow) -> Request {
-        Request::GetSettlementWindow(i)
-    }
-}
-
-impl From<settlement_windows::GetSettlementWindows> for Request {
-    fn from(i: settlement_windows::GetSettlementWindows) -> Request {
-        Request::GetSettlementWindows(i)
-    }
-}
-
-impl From<Request> for http::Request<hyper::Body> {
-    fn from(item: Request) -> http::Request<hyper::Body> {
-        match item {
-            Request::PostSettlement(i) => i.into(),
-            Request::GetSettlements(i) => i.into(),
-            Request::CloseSettlementWindow(i) => i.into(),
-            Request::GetSettlementWindow(i) => i.into(),
-            Request::GetSettlementWindows(i) => i.into(),
-        }
-    }
-}
-
 impl MojaloopClient for Client {
     #[cfg(feature = "clients-kube")]
     const K8S_PARAMS: k8s::KubernetesParams =
@@ -78,32 +27,37 @@ impl MojaloopClient for Client {
     }
 }
 
-#[derive(Debug)]
-pub enum Response {
-    PostSettlement(ResponseBody<settlement::Settlement>),
-    GetSettlements(ResponseBody<settlement::Settlements>),
-    GetSettlementWindow(ResponseBody<settlement_windows::SettlementWindow>),
-    GetSettlementWindows(ResponseBody<settlement_windows::SettlementWindows>),
-    CloseSettlementWindow(ResponseBody<NoBody>),
+pub trait SettlementRequest {
+    type Response: serde::de::DeserializeOwned;
+}
+
+impl SettlementRequest for settlement::PostSettlement {
+    type Response = settlement::Settlement;
+}
+
+impl SettlementRequest for settlement::GetSettlements {
+    type Response = settlement::Settlements;
+}
+
+impl SettlementRequest for settlement_windows::GetSettlementWindow {
+    type Response = settlement_windows::SettlementWindow;
+}
+
+impl SettlementRequest for settlement_windows::GetSettlementWindows {
+    type Response = settlement_windows::SettlementWindows;
+}
+
+impl SettlementRequest for settlement_windows::CloseSettlementWindow {
+    type Response = NoBody;
 }
 
 impl Client {
-    pub async fn send(&mut self, msg: Request) -> fspiox_api::clients::Result<Response> {
-        use crate::settlement::settlement::*;
-        use crate::settlement::settlement_windows::*;
-        Ok(
-            match msg {
-                Request::PostSettlement(m) => Response::PostSettlement(
-                    request::<PostSettlement, Settlement>(&mut self.sender, m).await?),
-                Request::GetSettlements(m) => Response::GetSettlements(
-                    request::<GetSettlements, Settlements>(&mut self.sender, m).await?),
-                Request::CloseSettlementWindow(m) => Response::CloseSettlementWindow(
-                    request::<CloseSettlementWindow, NoBody>(&mut self.sender, m).await?),
-                Request::GetSettlementWindow(m) => Response::GetSettlementWindow(
-                    request::<GetSettlementWindow, SettlementWindow>(&mut self.sender, m).await?),
-                Request::GetSettlementWindows(m) => Response::GetSettlementWindows(
-                    request::<GetSettlementWindows, SettlementWindows>(&mut self.sender, m).await?),
-            }
-        )
+    pub async fn send<T: SettlementRequest>(&mut self, msg: T)
+        -> fspiox_api::clients::Result<ResponseBody<T::Response>>
+    where
+        T: SettlementRequest + std::fmt::Debug + Clone,
+        http::Request<hyper::Body>: From<T>
+    {
+        request::<T, T::Response>(&mut self.sender, msg).await
     }
 }
