@@ -96,7 +96,8 @@ impl TS for SettlementModelName {
 
     fn transparent() -> bool { false }
 
-    // TODO: needs to have a size limit somehow
+    // TODO: needs to have a size limit somehow. We could perhaps write out a whole class or
+    // interface definition here. Could that work somehow?
     fn decl() -> String {
         "type SettlementModelName = string".to_string()
     }

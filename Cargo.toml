@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 # fspiox-api = { path = "/home/msk/projects/github.com/msk-/fspiox-api/", features = ["typescript_types"] }
-fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "cfc58492fd521fad7ed9ec48bf5a5f085a8c8c5b", features = ["typescript_types"] }
+fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "428a30605ad0efbad392698d0d14b2031ad9f656", features = ["typescript_types"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 derive_more = "0.99"
@@ -28,9 +28,9 @@ reqwest = { version = "0.11", optional = true, default-features = false, feature
 hyper = { version = "0.14", optional = true }
 ts-rs = { git = "https://github.com/Aleph-Alpha/ts-rs", rev = "ddd461522591a90b987b22dd05e06cfccbea6f5a", optional = true }
 tokio = { version = "1.6.1", features = ["full"], optional = true }
-kube = { git = "https://github.com/kazk/kube-rs", rev = "e1b02c57d9ebd5bbf0d93b244a7be4b7438d3b66", features = ["ws"], optional = true }
-kube-runtime = { version = "0.56.0", optional = true }
-k8s-openapi = { version = "0.11.0", default-features = false, features = ["v1_20"], optional = true }
+kube = { git = "https://github.com/partiallyordered/kube-rs", rev = "46a777178779e6b0895f53ca8202eb7325315230", features = ["ws"], optional = true }
+kube-runtime = { version = "0.60.0", optional = true }
+k8s-openapi = { version = "0.13.0", default-features = false, features = ["v1_21"], optional = true }
 
 [features]
 default = []
