@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 # fspiox-api = { path = "/home/msk/projects/github.com/msk-/fspiox-api/", features = ["typescript_types"] }
-fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "f5a8c4e7868064e74ff097cb0f2928185a27325e", features = ["typescript_types"] }
+fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "b2f7cdb2a2b0d914b8eb1fbc0ff885874bc09304", features = ["typescript_types"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 derive_more = "0.99"
