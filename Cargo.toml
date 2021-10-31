@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 # fspiox-api = { path = "/home/msk/projects/github.com/msk-/fspiox-api/" }
-fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "926969db6023913ff251036eb5201325bb210440" }
+fspiox-api = { git = "https://github.com/partiallyordered/fspiox-api", rev = "ccb8894962b1dfa85fc850f3537e219ff8ddd973" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 derive_more = "0.99"
@@ -28,7 +28,7 @@ reqwest = { version = "0.11", optional = true, default-features = false, feature
 hyper = { version = "0.14", optional = true }
 ts-rs = { git = "https://github.com/Aleph-Alpha/ts-rs", rev = "ddd461522591a90b987b22dd05e06cfccbea6f5a", optional = true }
 tokio = { version = "1.6.1", features = ["full"], optional = true }
-kube = { git = "https://github.com/kazk/kube-rs", rev = "aa58c61612b8e8721779986d511549ca6b5991c4", features = ["ws"] }
+kube = { git = "https://github.com/kazk/kube-rs", rev = "aa58c61612b8e8721779986d511549ca6b5991c4", features = ["ws"], optional = true }
 kube-runtime = { version = "0.60.0", optional = true }
 k8s-openapi = { version = "0.13.0", default-features = false, features = ["v1_21"], optional = true }
 
